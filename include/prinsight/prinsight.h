@@ -17,7 +17,7 @@ namespace prinsight {
      */
     DecMultiClientIPFuncEnc(std::string name);
 
-    smokeTest();
+    void smokeTest();
   };
 
 }  // namespace prinsight

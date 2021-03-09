@@ -1,13 +1,11 @@
-#include <fmt/format.h>
 #include <prinsight/prinsight.h>
+//#include <spdlog/spdlog.h>
 #include <time.h>
 
 #include <cstdio>
 #include <iostream>
 
 #include "gmpxx.h"
-#include "spdlog/spdlog.h"
-
 extern "C" {
 #include "cifer/innerprod/fullysec/dmcfe.h"
 #include "cifer/sample/uniform.h"
@@ -15,10 +13,12 @@ extern "C" {
 
 using namespace prinsight;
 
-DecMultiClientIPFuncEnc::DecMultiClientIPFuncEnc(std::string _name) : name(std::move(_name)) {}
+DecMultiClientIPFuncEnc::DecMultiClientIPFuncEnc(std::string _name) : name(std::move(_name)) {
+  // spdlog::info("Hello, {}!", name);
+}
 
-DecMultiClientIPFuncEnc::smokeTest() {
-  size_t num_clients = 50;
+void DecMultiClientIPFuncEnc::smokeTest() {
+  const size_t num_clients = 50;
   mpz_t bound, bound_neg, xy_check, xy;
   mpz_inits(bound, bound_neg, xy_check, xy, NULL);
   mpz_set_ui(bound, 10000);
@@ -60,19 +60,19 @@ DecMultiClientIPFuncEnc::smokeTest() {
   // decrypt the inner product with the corresponding label
   printf("\ndecrypt starts");
   cfe_error err = cfe_dmcfe_decrypt(xy, ciphers, fe_key, label, label_len, &y, bound);
-  printf("\ndecrypt ends");
+  printf("\ndecrypt ends %x", err);
 
   // check correctness
   cfe_vec_dot(xy_check, &x, &y);
 
   printf("\nvector x = [");
-  for (int i = 0; i < num_clients; i++) {
+  for (size_t i = 0; i < num_clients; i++) {
     gmp_printf("%Zd ", x.vec[i]);
   }
   printf("]\n");
 
   printf("\nvector y = [");
-  for (int i = 0; i < num_clients; i++) {
+  for (size_t i = 0; i < num_clients; i++) {
     gmp_printf("%Zd  ", y.vec[i]);
   }
   printf("]\n");

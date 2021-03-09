@@ -31,7 +31,7 @@ auto main(int argc, char** argv) -> int {
     return 0;
   }
 
-  prinsight::Greeter greeter(name);
+  prinsight::DecMultiClientIPFuncEnc greeter(name);
   greeter.smokeTest();
 
   return 0;

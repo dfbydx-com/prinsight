@@ -4,6 +4,7 @@
 .DS_Store
 
 temp
+out
 
 CMakeLists.txt.user
 CMakeCache.txt
