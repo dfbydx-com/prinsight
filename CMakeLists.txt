@@ -35,8 +35,15 @@ CPMAddPackage("gh:TheLartians/PackageProject.cmake@1.4.1")
 #)
 
 # CiFEr and it's dependency libraries
-set (CIFER_DEPS_DIR ${PROJECT_SOURCE_DIR}/out/prebuilt/linux) # FIXME
-set(CIFER_DEPS_LIBRARIES cifer gmpxx gmp)
+# FIXME use find_package and similar interfaces to use dependencies
+# FIXME pass prebuilt from command line
+set(CIFER_DEPS_DIR ${PROJECT_SOURCE_DIR}/out/prebuilt/linux)
+find_library(CIFER_LIB cifer HINTS ${CIFER_DEPS_DIR}/cifer/lib REQUIRED NO_DEFAULT_PATH)
+find_library(GMP_LIB gmp HINTS ${CIFER_DEPS_DIR}/gmp/lib REQUIRED NO_DEFAULT_PATH)
+find_library(GMPXX_LIB gmpxx HINTS ${CIFER_DEPS_DIR}/gmp/lib REQUIRED NO_DEFAULT_PATH)
+set(CIFER_DEPS_LIBRARIES ${CIFER_LIB} ${GMPXX_LIB} ${GMP_LIB})
+message(STATUS "cifer dependency libs ${CIFER_DEPS_LIBRARIES}")
+
 
 set(CIFER_DEPS_LIB_DIRS
     ${CIFER_DEPS_DIR}/cifer/lib
@@ -74,12 +81,10 @@ target_link_libraries(
 
 target_include_directories(
   prinsight
-  PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-                 $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
-  ${CIFER_DEPS_LIB_DIRS}
+  PRIVATE $<BUILD_INTERFACE:${CIFER_DEPS_INCLUDE_DIRS}>
+  PUBLIC  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+          $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
 )
-
-target_link_directories(prinsight PUBLIC ${CIFER_DEPS_LIB_DIRS})
 
 # ---- Create an installable target ----
 # this allows users to install and find the library via `find_package()`.
