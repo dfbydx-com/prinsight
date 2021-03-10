@@ -27,12 +27,13 @@ include(cmake/CPM.cmake)
 CPMAddPackage("gh:TheLartians/PackageProject.cmake@1.4.1")
 
 # logging
-#CPMAddPackage(
-#  NAME spdlog
-#  GIT_TAG v1.8.2
-#  GITHUB_REPOSITORY gabime/spdlog
-#  OPTIONS "CMAKE_POSITION_INDEPENDENT_CODE ON"
-#)
+CPMAddPackage(
+  NAME spdlog
+  GIT_TAG v1.8.2
+  GITHUB_REPOSITORY gabime/spdlog
+  OPTIONS "SPDLOG_INSTALL YES" # create an installable target
+  OPTIONS "CMAKE_POSITION_INDEPENDENT_CODE ON"
+)
 
 # CiFEr and it's dependency libraries
 # FIXME use find_package and similar interfaces to use dependencies
@@ -76,7 +77,7 @@ target_compile_options(prinsight PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/perm
 
 target_link_libraries(
   prinsight
-  PUBLIC ${CIFER_DEPS_LIBRARIES}
+  PUBLIC ${CIFER_DEPS_LIBRARIES} spdlog::spdlog
 )
 
 target_include_directories(
@@ -102,5 +103,5 @@ packageProject(
   INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
   VERSION_HEADER "${VERSION_HEADER_LOCATION}"
   COMPATIBILITY SameMajorVersion
-  DEPENDENCIES ""
+  DEPENDENCIES "spdlog 1.8.2"
 )

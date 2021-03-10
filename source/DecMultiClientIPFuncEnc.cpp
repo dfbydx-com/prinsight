@@ -1,5 +1,5 @@
 #include <prinsight/prinsight.h>
-//#include <spdlog/spdlog.h>
+#include <spdlog/spdlog.h>
 #include <time.h>
 
 #include <cstdio>
@@ -14,7 +14,7 @@ extern "C" {
 using namespace prinsight;
 
 DecMultiClientIPFuncEnc::DecMultiClientIPFuncEnc(std::string _name) : name(std::move(_name)) {
-  // spdlog::info("Hello, {}!", name);
+  spdlog::info("Hello, {}!", name);
 }
 
 void DecMultiClientIPFuncEnc::smokeTest() {
