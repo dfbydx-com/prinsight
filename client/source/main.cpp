@@ -32,7 +32,7 @@ auto main(int argc, char** argv) -> int {
   }
 
   prinsight::SampleApp app(name);
-  app.smokeTest();
+  app.smokeTest1();
 
   return 0;
 }

@@ -21,18 +21,18 @@ SampleApp::SampleApp(std::string _name) : name(std::move(_name)) {
 
 void SampleApp::smokeTest() {
   //
-  const size_t nClients = 5;
+  const size_t nClients = 10;
   const uint64_t bound = 10000;
-  std::vector<DMCFEncryptor> clients;
+  std::vector<printsight::dmcfe::DMCFEncryptor> clients;
   std::vector<std::string> pubKeys;
   std::vector<std::string> ciphers;
-  std::vector<FunctionalDecryptionKey> decKeys;
+  std::vector<printsight::dmcfe::FunctionalDecryptionKey> decKeys;
   const std::vector<int64_t> policy(nClients, 1);
 
   spdlog::info("create clients");
 
   for (size_t i = 0; i < nClients; i++) {
-    auto client = DMCFEncryptor(i, nClients, bound);
+    auto client = printsight::dmcfe::DMCFEncryptor(i, nClients, bound);
     clients.push_back(client);
     pubKeys.push_back(client.getPublicKey());
   }
@@ -51,12 +51,12 @@ void SampleApp::smokeTest() {
   }
 
   spdlog::info("decrypt starts");
-  auto result = DMCFDecryptor::decrypt(ciphers, decKeys, policy, label, bound);
+  auto result = printsight::dmcfe::DMCFDecryptor::decrypt(ciphers, decKeys, policy, label, bound);
   spdlog::info("decrypt ends, result = {}", result);
 }
 
-void smokeTest1() {
-  const size_t num_clients = 50;
+void SampleApp::smokeTest1() {
+  const size_t num_clients = 5;
   mpz_t bound, bound_neg, xy_check, xy;
   mpz_inits(bound, bound_neg, xy_check, xy, NULL);
   mpz_set_ui(bound, 10000);
@@ -82,8 +82,16 @@ void smokeTest1() {
   // them the decryption of the inner product is possible
   cfe_vec x, y;
   cfe_vec_inits(num_clients, &x, &y, NULL);
-  cfe_uniform_sample_vec(&x, bound);
-  cfe_uniform_sample_range_vec(&y, bound_neg, bound);
+  // cfe_uniform_sample_vec(&x, bound);
+  // cfe_uniform_sample_range_vec(&y, bound_neg, bound);
+  mpz_t temp, one;
+  mpz_inits(temp, one, NULL);
+  mpz_set_ui(one, 1);
+  for (size_t i = 0; i < num_clients; i++) {
+    mpz_set_ui(temp, i * 10);
+    cfe_vec_set(&x, temp, i);
+    cfe_vec_set(&y, one, i);
+  }
   char label[] = "some label";
   size_t label_len = 10;  // length of the label string
   ECP_BN254 ciphers[num_clients];

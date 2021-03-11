@@ -70,7 +70,8 @@ target_compile_options(prinsight PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/perm
 
 target_link_libraries(
   prinsight
-  PUBLIC ${CIFER_DEPS_LIBRARIES} spdlog::spdlog
+  PRIVATE spdlog::spdlog
+  PUBLIC ${CIFER_DEPS_LIBRARIES}
 )
 
 target_include_directories(
@@ -97,5 +98,5 @@ packageProject(
   INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
   VERSION_HEADER "${VERSION_HEADER_LOCATION}"
   COMPATIBILITY SameMajorVersion
-  DEPENDENCIES "spdlog 1.8.2"
+  DEPENDENCIES " "
 )

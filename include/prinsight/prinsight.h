@@ -18,6 +18,7 @@ namespace prinsight {
     SampleApp(std::string name);
 
     void smokeTest();
+    void smokeTest1();
   };
 
 }  // namespace prinsight

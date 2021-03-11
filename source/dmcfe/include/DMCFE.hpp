@@ -8,13 +8,17 @@ extern "C" {
 #include "cifer/data/vec_curve.h"
 }
 
-class FunctionalDecryptionKey {
-  std::string key[2];
+namespace printsight {
+  namespace dmcfe {
 
-public:
-  FunctionalDecryptionKey(std::string key[2]);
-  FunctionalDecryptionKey(const cfe_vec_G2& v);
-  void toCfeVecG2(cfe_vec_G2& v) const;
-};
+    class FunctionalDecryptionKey {
+      std::string key[2];
 
+    public:
+      FunctionalDecryptionKey(std::string key[2]);
+      FunctionalDecryptionKey(const cfe_vec_G2& v);
+      void toCfeVecG2(cfe_vec_G2& v) const;
+    };
+  }  // namespace dmcfe
+}  // namespace printsight
 #endif  // __DMCFE_H__
