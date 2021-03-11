@@ -11,7 +11,7 @@ cp -r ${PROJECT_EXT_DIR}/${LIB_NAME}/version3/c . || exit 1
 
 # build
 cd c || exit 1
-sed -ie 's/ -O3/ -O3 -fPIC/g' config64.py || exit 1
+sed -ie 's/ -O3/ -g -fPIC/g' config64.py || exit 1
 echo -e "18\n0" | python config64.py || exit 1
 
 # install

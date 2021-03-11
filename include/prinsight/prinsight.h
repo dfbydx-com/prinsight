@@ -7,7 +7,7 @@ namespace prinsight {
   /**
    * @brief Decentralized Multi-Client Functional Encryption
    */
-  class DecMultiClientIPFuncEnc {
+  class SampleApp {
     std::string name;
 
   public:
@@ -15,7 +15,7 @@ namespace prinsight {
      * @brief Creates a new DecMultiClientIPFuncEnc
      * @param name the name of client
      */
-    DecMultiClientIPFuncEnc(std::string name);
+    SampleApp(std::string name);
 
     void smokeTest();
   };

@@ -1,23 +1,61 @@
+#include <gmpxx.h>
 #include <prinsight/prinsight.h>
 #include <spdlog/spdlog.h>
 #include <time.h>
 
 #include <cstdio>
 #include <iostream>
-
-#include "gmpxx.h"
 extern "C" {
 #include "cifer/innerprod/fullysec/dmcfe.h"
 #include "cifer/sample/uniform.h"
 }
 
+#include "dmcfe/include/DMCFDecryptor.hpp"
+#include "dmcfe/include/DMCFEncryptor.hpp"
+
 using namespace prinsight;
 
-DecMultiClientIPFuncEnc::DecMultiClientIPFuncEnc(std::string _name) : name(std::move(_name)) {
+SampleApp::SampleApp(std::string _name) : name(std::move(_name)) {
   spdlog::info("Hello, {}!", name);
 }
 
-void DecMultiClientIPFuncEnc::smokeTest() {
+void SampleApp::smokeTest() {
+  //
+  const size_t nClients = 5;
+  const uint64_t bound = 10000;
+  std::vector<DMCFEncryptor> clients;
+  std::vector<std::string> pubKeys;
+  std::vector<std::string> ciphers;
+  std::vector<FunctionalDecryptionKey> decKeys;
+  const std::vector<int64_t> policy(nClients, 1);
+
+  spdlog::info("create clients");
+
+  for (size_t i = 0; i < nClients; i++) {
+    auto client = DMCFEncryptor(i, nClients, bound);
+    clients.push_back(client);
+    pubKeys.push_back(client.getPublicKey());
+  }
+
+  for (size_t i = 0; i < nClients; i++) {
+    clients[i].setParticipantsPublicKeys(pubKeys);
+  }
+
+  std::string label = "test label";
+
+  for (size_t i = 0; i < nClients; i++) {
+    auto cipher = clients[i].encrypt(i * 10, label);
+    ciphers.push_back(cipher);
+    auto decKey = clients[i].getFunctionalDecryptionKey(policy);
+    decKeys.push_back(decKey);
+  }
+
+  spdlog::info("decrypt starts");
+  auto result = DMCFDecryptor::decrypt(ciphers, decKeys, policy, label, bound);
+  spdlog::info("decrypt ends, result = {}", result);
+}
+
+void smokeTest1() {
   const size_t num_clients = 50;
   mpz_t bound, bound_neg, xy_check, xy;
   mpz_inits(bound, bound_neg, xy_check, xy, NULL);

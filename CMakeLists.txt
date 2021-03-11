@@ -9,6 +9,9 @@ project(
   LANGUAGES C CXX
 )
 
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_C_FLAGS_DEBUG "-g")
+
 # ---- Include guards ----
 
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
@@ -42,19 +45,9 @@ set(CIFER_DEPS_DIR ${PROJECT_SOURCE_DIR}/out/prebuilt/linux)
 find_library(CIFER_LIB cifer HINTS ${CIFER_DEPS_DIR}/cifer/lib REQUIRED NO_DEFAULT_PATH)
 find_library(GMP_LIB gmp HINTS ${CIFER_DEPS_DIR}/gmp/lib REQUIRED NO_DEFAULT_PATH)
 find_library(GMPXX_LIB gmpxx HINTS ${CIFER_DEPS_DIR}/gmp/lib REQUIRED NO_DEFAULT_PATH)
-set(CIFER_DEPS_LIBRARIES ${CIFER_LIB} ${GMPXX_LIB} ${GMP_LIB})
+set(CIFER_DEPS_LIBRARIES ${GMP_LIB} ${GMPXX_LIB} ${CIFER_LIB})
 message(STATUS "cifer dependency libs ${CIFER_DEPS_LIBRARIES}")
 
-
-set(CIFER_DEPS_LIB_DIRS
-    ${CIFER_DEPS_DIR}/cifer/lib
-    ${CIFER_DEPS_DIR}/gmp/lib
-    )
-
-set(CIFER_DEPS_INCLUDE_DIRS
-    ${CIFER_DEPS_DIR}/cifer/include
-    ${CIFER_DEPS_DIR}/gmp/include
-    )
 # set_property(TARGET ${target} PROPERTY C_STANDARD 99)
 # set(CMAKE_C_FLAGS "-std=c99")
 add_definitions(-DC99)
@@ -82,7 +75,8 @@ target_link_libraries(
 
 target_include_directories(
   prinsight
-  PRIVATE $<BUILD_INTERFACE:${CIFER_DEPS_INCLUDE_DIRS}>
+  PRIVATE $<BUILD_INTERFACE:${CIFER_DEPS_DIR}/cifer/include>
+  PRIVATE $<BUILD_INTERFACE:${CIFER_DEPS_DIR}/gmp/include>
   PUBLIC  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
           $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
 )

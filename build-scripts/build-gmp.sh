@@ -12,6 +12,7 @@ make distclean 2>/dev/null 1>/dev/null
     --enable-cxx \
     --disable-static \
     --enable-shared \
-    --disable-maintainer-mode || exit 1
+    --disable-maintainer-mode \
+    CFLAGS=-g CXXFLAGS=-g || exit 1
 
 make -j$(get_cpu_count) install || exit 1

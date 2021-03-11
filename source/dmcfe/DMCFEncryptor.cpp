@@ -1,4 +1,4 @@
-#include <gmp.h>
+#include <gmpxx.h>
 #include <string.h>
 
 #include <cstdint>
@@ -6,20 +6,18 @@
 #include <vector>
 
 extern "C" {
+
 #include "cifer/innerprod/fullysec/dmcfe.h"
 #include "cifer/internal/common.h"
 }
 
-#include "DMCFEncryptor.hpp"
-#include "Utils.hpp"
+#include "include/DMCFEncryptor.hpp"
+#include "include/Utils.hpp"
 
-DMCFEncryptor::DMCFEncryptor(size_t clientId, size_t dataVectorLength, size_t modulusLen,
-                             const std::string &bound) {
+DMCFEncryptor::DMCFEncryptor(size_t clientId, size_t dataVectorLength, uint64_t bound) {
   _clientId = clientId;
   _dataVectorLength = dataVectorLength;
   _bound = bound;
-
-  _modulusLen = modulusLen;
 
   // initiate the scheme
   cfe_dmcfe_client *dmcfeClient
@@ -32,7 +30,7 @@ DMCFEncryptor::DMCFEncryptor(size_t clientId, size_t dataVectorLength, size_t mo
   ECP_BN254_toOctet(&tmp_oct, &dmcfeClient->client_pub_key, true);
   _publicKey = std::string(tmp);
 
-  *_dmcfeClient = dmcfeClient;
+  _dmcfeClient = (void *)dmcfeClient;
 }
 
 std::string DMCFEncryptor::getPublicKey() { return _publicKey; }
@@ -43,7 +41,7 @@ void DMCFEncryptor::setParticipantsPublicKeys(const std::vector<std::string> &pu
   char tmp[MODBYTES_256_56 + 1] = {0};
   octet tmp_oct = {0, sizeof(tmp), tmp};
 
-  cfe_dmcfe_client *dmcfeClient = (cfe_dmcfe_client *)(*_dmcfeClient);
+  cfe_dmcfe_client *dmcfeClient = (cfe_dmcfe_client *)(_dmcfeClient);
   if (NULL == dmcfeClient) {
     return;
   }
@@ -65,9 +63,9 @@ std::string DMCFEncryptor::encrypt(int64_t data, const std::string &label) {
   mpz_t x;
   mpz_init_set_ui(x, data);
 
-  cfe_dmcfe_client *dmcfeClient = (cfe_dmcfe_client *)(*_dmcfeClient);
+  cfe_dmcfe_client *dmcfeClient = (cfe_dmcfe_client *)(_dmcfeClient);
   if (NULL == dmcfeClient) {
-    return;
+    return NULL;
   }
 
   // CiFEr expects label param as char* not const char*
@@ -77,7 +75,7 @@ std::string DMCFEncryptor::encrypt(int64_t data, const std::string &label) {
   writable.push_back('\0');
   cfe_dmcfe_encrypt(&cipher, dmcfeClient, x, &writable[0], writable.size());
 
-  char tmp[MODBYTES_256_56 + 1];
+  char tmp[MODBYTES_256_56 + 1] = {0};
   octet tmp_oct = {0, sizeof(tmp), tmp};
   ECP_BN254_toOctet(&tmp_oct, &cipher, true);
   return std::string(tmp);
@@ -90,7 +88,7 @@ FunctionalDecryptionKey DMCFEncryptor::getFunctionalDecryptionKey(
 
   cfe_vec_init(&tempPolicy, policy.size());
 
-  cfe_dmcfe_client *dmcfeClient = (cfe_dmcfe_client *)(*_dmcfeClient);
+  cfe_dmcfe_client *dmcfeClient = (cfe_dmcfe_client *)(_dmcfeClient);
   // if (NULL == dmcfeClient) {  // FIXME
   //   return error;
   // }

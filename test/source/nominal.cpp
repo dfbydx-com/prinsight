@@ -7,8 +7,8 @@
 TEST_CASE("Smoke") {
   using namespace prinsight;
 
-  DecMultiClientIPFuncEnc dmcfe("Tests");
-  dmcfe.smokeTest();
+  SampleApp app("Tests");
+  app.smokeTest();
 }
 
 TEST_CASE("Prinsight version") {
