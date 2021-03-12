@@ -21,11 +21,11 @@ SampleApp::SampleApp(std::string _name) : name(std::move(_name)) {
 
 void SampleApp::smokeTest() {
   //
-  const size_t nClients = 10;
+  const size_t nClients = 50;
   const uint64_t bound = 10000;
   std::vector<printsight::dmcfe::DMCFEncryptor> clients;
-  std::vector<std::string> pubKeys;
-  std::vector<std::string> ciphers;
+  std::vector<printsight::dmcfe::PublicKey> pubKeys;
+  std::vector<printsight::dmcfe::Cipher> ciphers;
   std::vector<printsight::dmcfe::FunctionalDecryptionKey> decKeys;
   const std::vector<int64_t> policy(nClients, 1);
 
@@ -44,7 +44,7 @@ void SampleApp::smokeTest() {
   std::string label = "test label";
 
   for (size_t i = 0; i < nClients; i++) {
-    auto cipher = clients[i].encrypt(i * 10, label);
+    auto cipher = clients[i].encrypt(i * 100, label);
     ciphers.push_back(cipher);
     auto decKey = clients[i].getFunctionalDecryptionKey(policy);
     decKeys.push_back(decKey);

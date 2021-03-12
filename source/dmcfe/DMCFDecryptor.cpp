@@ -16,25 +16,22 @@ extern "C" {
 namespace printsight {
   namespace dmcfe {
 
-    uint64_t DMCFDecryptor::decrypt(const std::vector<std::string> &cipherList,
+    uint64_t DMCFDecryptor::decrypt(const std::vector<Cipher> &cipherList,
                                     const std::vector<FunctionalDecryptionKey> decryptionKeyList,
                                     const std::vector<int64_t> &policy, const std::string &label,
                                     uint64_t bound) {
       // check if length of ciphers, keys and policies are same
       // decrypt the inner product with the corresponding label
-      const size_t numClients = decryptionKeyList.size();
-      cfe_vec_G2 key_shares[numClients];
-      for (size_t i = 0; i < numClients; i++) {
+      const size_t num_clients = decryptionKeyList.size();
+      cfe_vec_G2 key_shares[num_clients];
+      for (size_t i = 0; i < num_clients; i++) {
         cfe_vec_G2_init(&key_shares[i], 2);
-        decryptionKeyList[i].toCfeVecG2(key_shares[i]);
+        decryptionKeyList[i].toCiferType(key_shares[i]);
       }
 
-      char tmp[2 * MODBYTES_256_56 + 1] = {0};
-      octet tmp_oct = {0, sizeof(tmp), tmp};
-      ECP_BN254 ciphers[numClients];
-      for (size_t i = 0; i < numClients; i++) {
-        strncpy(tmp, cipherList[i].c_str(), sizeof(tmp));
-        ECP_BN254_fromOctet(&ciphers[i], &tmp_oct);
+      ECP_BN254 ciphers[num_clients];
+      for (size_t i = 0; i < num_clients; i++) {
+        cipherList[i].toCiferType(ciphers[i]);
       }
 
       cfe_vec y;

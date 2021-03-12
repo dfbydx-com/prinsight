@@ -18,58 +18,49 @@ namespace printsight {
   namespace dmcfe {
 
     DMCFEncryptor::DMCFEncryptor(size_t clientId, size_t dataVectorLength, uint64_t bound) {
-      _clientId = clientId;
-      _dataVectorLength = dataVectorLength;
-      _bound = bound;
+      mClientId = clientId;
+      mDataVectorLength = dataVectorLength;
+      mBound = bound;
 
       // initiate the scheme
       cfe_dmcfe_client *dmcfeClient
           = (cfe_dmcfe_client *)cfe_malloc(sizeof(cfe_dmcfe_client));  // FIXME bad_alloc
-      cfe_dmcfe_client_init(dmcfeClient, _clientId);
+      cfe_dmcfe_client_init(dmcfeClient, mClientId);
 
       // extract public key
-      char tmp[MODBYTES_256_56 + 1];
-      octet tmp_oct = {0, sizeof(tmp), tmp};
-      ECP_BN254_toOctet(&tmp_oct, &dmcfeClient->client_pub_key, true);
-      _publicKey = std::string(tmp);
-
-      _dmcfeClient = (void *)dmcfeClient;
+      mPublicKey = new PublicKey(dmcfeClient->client_pub_key);
+      mDmcfeClient = (void *)dmcfeClient;
     }
 
-    std::string DMCFEncryptor::getPublicKey() { return _publicKey; }
+    PublicKey DMCFEncryptor::getPublicKey() const { return *mPublicKey; }
 
     // CiFEr expects index of every participants including this encryptor should be provided in
     // cfe_dmcfe_set_share call. Although it ignores the public key of this client.
-    void DMCFEncryptor::setParticipantsPublicKeys(const std::vector<std::string> &publicKey) {
-      char tmp[MODBYTES_256_56 + 1] = {0};
-      octet tmp_oct = {0, sizeof(tmp), tmp};
-
-      cfe_dmcfe_client *dmcfeClient = (cfe_dmcfe_client *)(_dmcfeClient);
+    void DMCFEncryptor::setParticipantsPublicKeys(const std::vector<PublicKey> &publicKeyList) {
+      cfe_dmcfe_client *dmcfeClient = (cfe_dmcfe_client *)(mDmcfeClient);
       if (NULL == dmcfeClient) {
         return;
       }
 
-      size_t numClients = publicKey.size();
-      ECP_BN254 *pubKeyList = (ECP_BN254 *)cfe_malloc(numClients * sizeof(ECP_BN254));
+      size_t num_clients = publicKeyList.size();
+      ECP_BN254 *pub_keys = (ECP_BN254 *)cfe_malloc(num_clients * sizeof(ECP_BN254));
 
-      // convert std::string->c-strig->octet->ECP_BN254
-      for (size_t i = 0; i < numClients; i++) {
-        strncpy(tmp, publicKey[i].c_str(), sizeof(tmp));
-        ECP_BN254_fromOctet(&pubKeyList[i], &tmp_oct);
+      for (size_t i = 0; i < num_clients; i++) {
+        publicKeyList[i].toCiferType(pub_keys[i]);
       }
 
-      cfe_dmcfe_set_share(dmcfeClient, pubKeyList, numClients);
+      cfe_dmcfe_set_share(dmcfeClient, pub_keys, num_clients);
     }
 
-    std::string DMCFEncryptor::encrypt(int64_t data, const std::string &label) {
+    Cipher DMCFEncryptor::encrypt(int64_t data, const std::string &label) {
       ECP_BN254 cipher;
       mpz_t x;
       mpz_init_set_ui(x, data);
 
-      cfe_dmcfe_client *dmcfeClient = (cfe_dmcfe_client *)(_dmcfeClient);
-      if (NULL == dmcfeClient) {
-        return NULL;
-      }
+      cfe_dmcfe_client *dmcfeClient = (cfe_dmcfe_client *)(mDmcfeClient);
+      /*       if (NULL == dmcfeClient) {
+              return NULL;
+            } */
 
       // CiFEr expects label param as char* not const char*
       // cfe_dmcfe_encrypt(&cipher, dmcfeClient, x, label.c_str(), label.length());
@@ -77,11 +68,7 @@ namespace printsight {
       std::vector<char> writable(label.begin(), label.end());
       writable.push_back('\0');
       cfe_dmcfe_encrypt(&cipher, dmcfeClient, x, &writable[0], writable.size());
-
-      char tmp[MODBYTES_256_56 + 1] = {0};
-      octet tmp_oct = {0, sizeof(tmp), tmp};
-      ECP_BN254_toOctet(&tmp_oct, &cipher, true);
-      return std::string(tmp);
+      return Cipher(cipher);
     }
 
     FunctionalDecryptionKey DMCFEncryptor::getFunctionalDecryptionKey(
@@ -91,7 +78,7 @@ namespace printsight {
 
       cfe_vec_init(&tempPolicy, policy.size());
 
-      cfe_dmcfe_client *dmcfeClient = (cfe_dmcfe_client *)(_dmcfeClient);
+      cfe_dmcfe_client *dmcfeClient = (cfe_dmcfe_client *)(mDmcfeClient);
       // if (NULL == dmcfeClient) {  // FIXME
       //   return error;
       // }
