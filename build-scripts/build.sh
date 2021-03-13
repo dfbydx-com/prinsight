@@ -1,17 +1,11 @@
 #!/bin/bash
 
-echo -e "Building dependencies for host linux"
-
-export PROJECT_ROOT_DIR=$(pwd)
-source ${PROJECT_ROOT_DIR}/build-scripts/prepare-build.sh 2>&1 >> /dev/null
-
 ########### setup ######################
 
-dependency_libs=(gmp amcl libsodium cifer)
+#dependency_libs=(gmp amcl libsodium cifer)
+dependency_libs=(gmp)
 
 echo -e "\nINFO: Starting new build at "$(date)"\n" 1>>${PROJECT_ROOT_DIR}/build.log 2>&1
-
-export INSTALL_BASE="${PROJECT_OUT_DIR}/prebuilt/linux"
 
 for library in "${dependency_libs[@]}"
 do

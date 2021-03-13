@@ -96,7 +96,6 @@ clone_git_repository_with_tag() {
     echo ${RC}
     return
   fi
- 
 
   RC=$?
 

@@ -7,9 +7,20 @@ export PROJECT_TMP_DIR=${PROJECT_OUT_DIR}/.tmp
 # source code for external dependencies
 export PROJECT_EXT_DIR=${PROJECT_OUT_DIR}/external
 
+# clean build
+rm -rf "${PROJECT_OUT_DIR}/prebuilt"
 
-rm -rf "${PROJECT_OUT_DIR}"
-mkdir -p "${PROJECT_TMP_DIR}" "${PROJECT_OUT_DIR}" "${PROJECT_EXT_DIR}"
+if [[ ! -d ${PROJECT_OUT_DIR} ]]; then
+    mkdir -p "${PROJECT_OUT_DIR}"
+fi
+
+if [[ ! -d ${PROJECT_TMP_DIR} ]]; then
+    mkdir -p "${PROJECT_TMP_DIR}"
+fi
+
+if [[ ! -d ${PROJECT_EXT_DIR} ]]; then
+    mkdir -p "${PROJECT_EXT_DIR}"
+fi
 
 # common functions
 source ${PROJECT_ROOT_DIR}/build-scripts/utils.sh
@@ -26,6 +37,7 @@ libsodium_release_tag="1.0.18-RELEASE"
 clone_git_repository_with_tag ${libsodium_git_repo} ${libsodium_release_tag} libsodium || exit 1
 
 # download amcl
+rm -rf ${PROJECT_EXT_DIR}/amcl
 amcl_git_repo="https://github.com/miracl/amcl.git"
 amcl_commit_id="e39201e3d34f4406530c103bb01f50fd84253b48"
 clone_git_repository_with_commit_id ${amcl_git_repo} ${amcl_commit_id} amcl || exit 1
