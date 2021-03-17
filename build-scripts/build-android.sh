@@ -31,10 +31,19 @@ source ${PROJECT_ROOT_DIR}/build-scripts/android-setup.sh 2>&1 >> /dev/null
 export TOOLCHAIN=$(get_toolchain)
 export TOOLCHAIN_ARCH=$(get_toolchain_arch)
 
-export INSTALL_BASE="${PROJECT_OUT_DIR}/prebuilt/${TARGET_PLATFORM}"
+export INSTALL_BASE="${PROJECT_OUT_DIR}/prebuilt/${TARGET_PLATFORM}/${ARCH}"
 
 # PREPARE PATHS
-`set_toolchain_clang_paths`
+export PATH=$PATH:${ANDROID_NDK_ROOT}/toolchains/llvm/prebuilt/${TOOLCHAIN}/bin
+
+BUILD_HOST=$(get_build_host)
+
+export AR=${BUILD_HOST}-ar
+export CC=$(get_clang_target_host)-clang
+export CXX=$(get_clang_target_host)-clang++
+export LD=${BUILD_HOST}-ld
+export RANLIB=${BUILD_HOST}-ranlib
+export STRIP=${BUILD_HOST}-strip
 
 # PREPARING FLAGS
 export BUILD_HOST=`get_build_host`

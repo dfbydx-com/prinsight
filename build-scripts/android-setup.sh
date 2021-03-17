@@ -138,10 +138,8 @@ get_arch_specific_cflags() {
 }
 
 get_size_optimization_cflags() {
-    if [[ -z ${NO_LINK_TIME_OPTIMIZATION} ]]; then
+    if [[ ${LINK_TIME_OPTIMIZATION} ]]; then
         local LINK_TIME_OPTIMIZATION_FLAGS="-flto"
-    else
-        local LINK_TIME_OPTIMIZATION_FLAGS=""
     fi
 
     local ARCH_OPTIMIZATION="-Os -ffunction-sections -fdata-sections"
