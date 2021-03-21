@@ -2,9 +2,7 @@
 
 ########### setup ######################
 
-#dependency_libs=(gmp amcl libsodium cifer)
-dependency_libs=(gmp)
-
+dependency_libs=(gmp amcl libsodium cifer)
 echo -e "\nINFO: Starting new build at "$(date)"\n" 1>>${PROJECT_ROOT_DIR}/build.log 2>&1
 
 for library in "${dependency_libs[@]}"
