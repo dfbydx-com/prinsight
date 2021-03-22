@@ -1,38 +1,43 @@
 #include <gmpxx.h>
-#include <prinsight/prinsight.h>
 #include <spdlog/spdlog.h>
 #include <time.h>
 
 #include <cstdio>
 #include <iostream>
+#include <prinsight/prinsight.hpp>
 extern "C" {
 #include "cifer/innerprod/fullysec/dmcfe.h"
 #include "cifer/sample/uniform.h"
 }
 
-#include "dmcfe/include/DMCFDecryptor.hpp"
-#include "dmcfe/include/DMCFEncryptor.hpp"
+#include "dmcfe/include/dmcfe_decryptor.hpp"
+#include "dmcfe/include/dmcfe_encryptor.hpp"
+
+#if defined(ENABLE_PRINSIGHT_TESTING)
+#  include <doctest/doctest.h>
+#endif
 
 using namespace prinsight;
 
-SampleApp::SampleApp(std::string _name) : name(std::move(_name)) {
-  spdlog::info("Hello, {}!", name);
-}
+Core::Core() { mEncryptor = new DMCFEncryptor(0, 0, 0); }
+Core::~Core() {}
 
-void SampleApp::smokeTest() {
+#if defined(ENABLE_PRINSIGHT_TESTING)
+
+TEST_CASE("e2e encrypt-decrypt test on DMCFE APIs") {
   //
   const size_t nClients = 50;
   const uint64_t bound = 10000;
-  std::vector<printsight::dmcfe::DMCFEncryptor> clients;
-  std::vector<printsight::dmcfe::PublicKey> pubKeys;
-  std::vector<printsight::dmcfe::Cipher> ciphers;
-  std::vector<printsight::dmcfe::FunctionalDecryptionKey> decKeys;
+  std::vector<DMCFEncryptor> clients;
+  std::vector<PublicKey> pubKeys;
+  std::vector<Cipher> ciphers;
+  std::vector<FunctionalDecryptionKey> decKeys;
   const std::vector<int64_t> policy(nClients, 1);
 
   spdlog::info("create clients");
 
   for (size_t i = 0; i < nClients; i++) {
-    auto client = printsight::dmcfe::DMCFEncryptor(i, nClients, bound);
+    auto client = DMCFEncryptor(i, nClients, bound);
     clients.push_back(client);
     pubKeys.push_back(client.getPublicKey());
   }
@@ -51,11 +56,11 @@ void SampleApp::smokeTest() {
   }
 
   spdlog::info("decrypt starts");
-  auto result = printsight::dmcfe::DMCFDecryptor::decrypt(ciphers, decKeys, policy, label, bound);
+  auto result = DMCFDecryptor::decrypt(ciphers, decKeys, policy, label, bound);
   spdlog::info("decrypt ends, result = {}", result);
 }
 
-void SampleApp::smokeTest1() {
+TEST_CASE("e2e encrypt-decrypt test on cifer APIs") {
   const size_t num_clients = 5;
   mpz_t bound, bound_neg, xy_check, xy;
   mpz_inits(bound, bound_neg, xy_check, xy, NULL);
@@ -137,3 +142,4 @@ void SampleApp::smokeTest1() {
 
   return;
 }
+#endif

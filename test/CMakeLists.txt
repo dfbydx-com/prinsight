@@ -19,7 +19,6 @@ CPMAddPackage("gh:onqtam/doctest#2.4.5")
 CPMAddPackage("gh:TheLartians/Format.cmake@1.7.0")
 
 add_compile_definitions(ENABLE_PRINSIGHT_TESTING)
-#message(STATUS "inc ${doctest_SOURCE_DIR}")
 include_directories(${doctest_SOURCE_DIR})
 
 if(TEST_INSTALLED_VERSION)
