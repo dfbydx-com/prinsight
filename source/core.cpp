@@ -1,8 +1,6 @@
 #include <gmpxx.h>
 #include <spdlog/spdlog.h>
-#include <time.h>
 
-#include <cstdio>
 #include <iostream>
 #include <prinsight/prinsight.hpp>
 extern "C" {
@@ -12,6 +10,7 @@ extern "C" {
 
 #include "dmcfe/include/dmcfe_decryptor.hpp"
 #include "dmcfe/include/dmcfe_encryptor.hpp"
+#include "models/client_registration.hpp"
 
 #if defined(ENABLE_PRINSIGHT_TESTING)
 #  include <doctest/doctest.h>
@@ -19,8 +18,24 @@ extern "C" {
 
 using namespace prinsight;
 
-Core::Core() { mEncryptor = new DMCFEncryptor(0, 0, 0); }
+Core::Core() {}
 Core::~Core() {}
+
+Status Core::getClientRegistrationData(std::string& registrationData) { return Status::kOk; }
+
+Status Core::provideSchemeParamsData(const std::string& schemeParamsData) { return Status::kOk; }
+
+Status Core::getClientPublicData(std::string& clientPublicData) { return Status::kOk; }
+
+Status Core::provideParticipantsPublicData(const std::string& participantsPublicData) {
+  return Status::kOk;
+}
+
+Status Core::setLabelsValue(const std::string& label, uint64_t value) { return Status::kOk; }
+
+Status Core::getAnalyticsData(std::string& analyticsData) { return Status::kOk; }
+
+Status getInnerProductAnalysis(const std::string& analyticsData) { return Status::kOk; }
 
 #if defined(ENABLE_PRINSIGHT_TESTING)
 

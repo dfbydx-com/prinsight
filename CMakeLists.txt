@@ -38,6 +38,20 @@ CPMAddPackage(
   OPTIONS "CMAKE_POSITION_INDEPENDENT_CODE ON"
 )
 
+SET(CMAKE_CXX_FLAGS "-Wall -std=c++11")
+CPMAddPackage(
+  NAME nlohmann_json
+  VERSION 3.9.1
+  # not using the repo as it takes forever to clone
+  URL https://github.com/nlohmann/json/releases/download/v3.9.1/include.zip
+  URL_HASH SHA256=6bea5877b1541d353bd77bdfbdb2696333ae5ed8f9e8cc22df657192218cad91
+)
+
+if(nlohmann_json_ADDED)
+  add_library(nlohmann_json INTERFACE)
+  target_include_directories(nlohmann_json SYSTEM INTERFACE ${nlohmann_json_SOURCE_DIR}/include)
+endif()
+
 # CiFEr and it's dependency libraries
 # FIXME use find_package and similar interfaces to use dependencies
 # FIXME pass prebuilt from command line
@@ -63,14 +77,14 @@ file(GLOB_RECURSE sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/source/
 # ---- Create library ----
 add_library(prinsight SHARED ${headers} ${sources})
 
-set_target_properties(prinsight PROPERTIES CXX_STANDARD 17)
+# set_target_properties(prinsight PROPERTIES CXX_STANDARD 17)
 
 # being a cross-platform target, we enforce standards conformance on MSVC
 target_compile_options(prinsight PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/permissive>")
 
 target_link_libraries(
   prinsight
-  PRIVATE spdlog::spdlog
+  PRIVATE spdlog::spdlog nlohmann_json
   PUBLIC ${CIFER_DEPS_LIBRARIES}
 )
 
