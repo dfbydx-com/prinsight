@@ -13,44 +13,42 @@ extern "C" {
 
 namespace prinsight {
 
+  constexpr std::size_t kG1BufferSize = MODBYTES_256_56 + 1;
+  constexpr std::size_t kG2BufferSize = 4 * MODBYTES_256_56 + 1;
+
   class G1 {
   private:
-    char mBuffer[MODBYTES_256_56 + 1];
+    char mBuffer[kG1BufferSize];
 
   public:
+    G1();
+    ~G1();
     explicit G1(const ECP_BN254& key);
+
     void toCiferType(ECP_BN254& p) const;
-    friend std::ostream& operator<<(std::ostream& os, const G1& p) {
-      os << "[ 0x";
-      for (auto c : p.mBuffer) {
-        os << std::setw(2) << std::setfill('0') << std::hex << (int)c;
-      }
-      os << " ]";
-      return os;
-    }
+
+    void toBase64(std::string& b64String);
+    void fromBase64(const std::string& b64String);
+
+    friend std::ostream& operator<<(std::ostream& os, const G1& p);
   };
 
   class G2 {
   private:
-    char mPart1[4 * MODBYTES_256_56 + 1];
-    char mPart2[4 * MODBYTES_256_56 + 1];
+    char mPart1[kG2BufferSize];
+    char mPart2[kG2BufferSize];
 
   public:
+    G2();
+    ~G2();
     explicit G2(const cfe_vec_G2& v);
-    void toCiferType(cfe_vec_G2& v) const;
-    friend std::ostream& operator<<(std::ostream& os, const G2& p) {
-      os << "[ 0x";
-      for (auto c : p.mPart1) {
-        os << std::setw(2) << std::setfill('0') << std::hex << (int)c;
-      }
 
-      os << ", ";
-      for (auto c : p.mPart2) {
-        os << std::setw(2) << std::setfill('0') << std::hex << (int)c;
-      }
-      os << " ]";
-      return os;
-    }
+    void toCiferType(cfe_vec_G2& v) const;
+
+    void toBase64(std::vector<std::string>& partsB64);
+    void fromBase64(const std::vector<std::string>& partsB64);
+
+    friend std::ostream& operator<<(std::ostream& os, const G2& p);
   };
 
   using PublicKey = G1;

@@ -1,6 +1,5 @@
 #include "include/utils.hpp"
 
-#include <gmp.h>
 #include <gmpxx.h>
 
 #if defined(ENABLE_PRINSIGHT_TESTING)
@@ -20,6 +19,12 @@ namespace prinsight {
     mpz_clear(temp);
   }
 
+  void Utils::zeroize(void* buffer, size_t len) {
+    if (buffer) {
+      memset(buffer, 0x0, len);
+    }
+  }
+
 #if defined(ENABLE_PRINSIGHT_TESTING)
 
   TEST_CASE("e2e conversion std vector to cfe vec") {
@@ -32,5 +37,4 @@ namespace prinsight {
   }
 #endif  // 0
 
-  // namespace dmcfe
 }  // namespace prinsight

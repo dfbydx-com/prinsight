@@ -38,6 +38,28 @@ CPMAddPackage(
   OPTIONS "CMAKE_POSITION_INDEPENDENT_CODE ON"
 )
 
+# base64
+CPMAddPackage(
+  NAME base64
+  GITHUB_REPOSITORY zhicheng/base64
+  GIT_TAG master
+  DOWNLOAD_ONLY YES
+)
+
+if (base64_ADDED)
+  # base64 has no CMake support, so we create our own target
+
+  FILE(GLOB base64_sources ${base64_SOURCE_DIR}/*.c)
+  list(REMOVE_ITEM base64_sources "${base64_SOURCE_DIR}/main.c")
+  add_library(base64 STATIC ${base64_sources})
+
+  target_include_directories(base64
+    PUBLIC
+      $<BUILD_INTERFACE:${base64_SOURCE_DIR}>
+  )
+endif()
+
+# json support
 SET(CMAKE_CXX_FLAGS "-Wall -std=c++11")
 CPMAddPackage(
   NAME nlohmann_json
@@ -84,7 +106,7 @@ target_compile_options(prinsight PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/perm
 
 target_link_libraries(
   prinsight
-  PRIVATE spdlog::spdlog nlohmann_json
+  PRIVATE spdlog::spdlog base64 nlohmann_json
   PUBLIC ${CIFER_DEPS_LIBRARIES}
 )
 
