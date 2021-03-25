@@ -1,6 +1,8 @@
 #ifndef __SCHEME_PARAMS_MODEL_H__
 #define __SCHEME_PARAMS_MODEL_H__
 
+#include <spdlog/fmt/ostr.h>
+
 #include <cstdint>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -19,16 +21,22 @@ namespace prinsight {
         : index(0), participantsCount(0), bound(0) {}
     ~SchemeParamsModel() = default;
 
-    inline std::size_t getIndex() { return index; }
+    inline std::size_t getIndex() const { return index; }
     inline void setIndex(std::size_t index) { this->index = index; }
 
-    inline std::size_t getParticipantsCount() { return participantsCount; }
+    inline std::size_t getParticipantsCount() const { return participantsCount; }
     inline void setParticipantsCount(std::size_t participantsCount) {
       this->participantsCount = participantsCount;
     }
 
-    inline std::size_t getBound() { return bound; }
-    inline void setBound(uint64_t bound) { this->bound = bound; }
+    inline std::size_t getBound() const { return bound; }
+    inline void setBound(std::uint64_t bound) { this->bound = bound; }
+
+    template <typename OStream>
+    friend OStream &operator<<(OStream &os, const SchemeParamsModel &s) {
+      return os << "scheme params data [index:" << s.index
+                << ", participants-count:" << s.participantsCount << ", bound:" << s.bound << "]";
+    }
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(SchemeParamsModel, index, participantsCount, bound)
   };

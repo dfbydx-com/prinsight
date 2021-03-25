@@ -13,10 +13,10 @@ namespace prinsight {
   private:
     /* data */
   public:
-    static uint64_t decrypt(const std::vector<Cipher> &cipherList,
-                            const std::vector<FunctionalDecryptionKey> decryptionKeyList,
-                            const std::vector<int64_t> &policy, const std::string &label,
-                            uint64_t bound);
+    static std::uint64_t decrypt(const std::vector<Cipher> &cipherList,
+                                 const std::vector<FunctionalDecryptionKey> decryptionKeyList,
+                                 const std::vector<std::int64_t> &policy, const std::string &label,
+                                 std::uint64_t bound);
   };
 }  // namespace prinsight
 #endif

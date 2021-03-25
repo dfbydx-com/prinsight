@@ -29,6 +29,7 @@ namespace prinsight {
 
     void toBase64(std::string& b64String);
     void fromBase64(const std::string& b64String);
+    /*    template <typename OStream> friend OStream& operator<<(OStream& os, const G1& p); */
 
     friend std::ostream& operator<<(std::ostream& os, const G1& p);
   };

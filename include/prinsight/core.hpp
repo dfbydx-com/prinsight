@@ -4,6 +4,7 @@
 
 #include <prinsight/status.hpp>
 #include <string>
+#include <vector>
 
 namespace prinsight {
 
@@ -30,16 +31,30 @@ namespace prinsight {
 
   public:
     Core();
+
     ~Core();
+
     Status getClientRegistrationData(std::string &registrationData);
-    Status provideSchemeParamsData(const std::string &schemeParamsData);
+
+    Status initializeClientAnalyticsScheme(const std::string &schemeParamsData);
+
     Status getClientPublicData(std::string &clientPublicData);
+
     Status provideParticipantsPublicData(const std::string &participantsPublicData);
-    Status setLabelsValue(const std::string &label, uint64_t value);
-    Status getAnalyticsData(std::string &analyticsData);
+
+    Status setLabelsValue(const std::string &label, std::uint64_t value);
+
+    Status getClientAnalyticsData(std::string &analyticsData);
   };
 
-  static Status getInnerProductAnalysis(const std::string &analyticsData);
+  Status serializeClientPublicDataList(const std::vector<std::string> &clientPublicDataList,
+                                       std::string &serializedClientPublicDataList);
+
+  /* Status serializeClientAnalyticsDataDataList(
+        const std::vector<const std::string &> &clientAnalyticsDataDataList,
+        std::string &serializedClientAnalyticsDataDataList);
+
+     Status getInnerProductAnalysis(const std::string &analyticsData); */
 
 }  // namespace prinsight
 

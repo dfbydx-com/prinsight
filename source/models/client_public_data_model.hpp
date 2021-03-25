@@ -1,6 +1,8 @@
 #ifndef __CLIENT_PUBLIC_DATA_MODEL_H__
 #define __CLIENT_PUBLIC_DATA_MODEL_H__
 
+#include <spdlog/fmt/ostr.h>
+
 #include <cstdint>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -13,17 +15,22 @@ namespace prinsight {
     std::string pubKey;
 
   public:
-    ClientPublicDataModel() : pubKey(""), index(0) {}
+    ClientPublicDataModel() : index(0), pubKey("") {}
 
     ClientPublicDataModel(std::size_t index, const std::string pubKey)
         : index(index), pubKey(pubKey) {}
     ~ClientPublicDataModel() = default;
 
-    inline std::size_t getIndex() { return index; }
+    inline std::size_t getIndex() const { return index; }
     inline void setIndex(std::size_t index) { this->index = index; }
 
-    inline std::string getPublicKey() { return pubKey; }
-    inline void setPublicKey(std::string pubKey) { this->pubKey = pubKey; }
+    inline std::string getPublicKey() const { return pubKey; }
+    inline void setPublicKey(const std::string &pubKey) { this->pubKey = pubKey; }
+
+    template <typename OStream>
+    friend OStream &operator<<(OStream &os, const ClientPublicDataModel &c) {
+      return os << "client public data data [index:" << c.index << ", pub-key:" << c.pubKey << "]";
+    }
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(ClientPublicDataModel, index, pubKey)
   };

@@ -15,21 +15,21 @@ extern "C" {
 
 namespace prinsight {
 
-  uint64_t DMCFDecryptor::decrypt(const std::vector<Cipher> &cipherList,
-                                  const std::vector<FunctionalDecryptionKey> decryptionKeyList,
-                                  const std::vector<int64_t> &policy, const std::string &label,
-                                  uint64_t bound) {
+  std::uint64_t DMCFDecryptor::decrypt(const std::vector<Cipher> &cipherList,
+                                       const std::vector<FunctionalDecryptionKey> decryptionKeyList,
+                                       const std::vector<std::int64_t> &policy,
+                                       const std::string &label, std::uint64_t bound) {
     // check if length of ciphers, keys and policies are same
     // decrypt the inner product with the corresponding label
-    const size_t num_clients = decryptionKeyList.size();
+    const std::size_t num_clients = decryptionKeyList.size();
     cfe_vec_G2 key_shares[num_clients];
-    for (size_t i = 0; i < num_clients; i++) {
+    for (std::size_t i = 0; i < num_clients; i++) {
       cfe_vec_G2_init(&key_shares[i], 2);
       decryptionKeyList[i].toCiferType(key_shares[i]);
     }
 
     ECP_BN254 ciphers[num_clients];
-    for (size_t i = 0; i < num_clients; i++) {
+    for (std::size_t i = 0; i < num_clients; i++) {
       cipherList[i].toCiferType(ciphers[i]);
     }
 
@@ -41,14 +41,14 @@ namespace prinsight {
     writable.push_back('\0');
 
     mpz_t res, resBound;
-    mpz_inits(res, resBound, NULL);
+    mpz_inits(res, resBound, nullptr);
     mpz_set_si(resBound, bound);
 
     cfe_error err
         = cfe_dmcfe_decrypt(res, ciphers, key_shares, &writable[0], writable.size(), &y, resBound);
 
-    uint64_t result = mpz_get_ui(res);
-    mpz_clears(res, resBound, NULL);
+    std::uint64_t result = mpz_get_ui(res);
+    mpz_clears(res, resBound, nullptr);
 
     return result;
   }

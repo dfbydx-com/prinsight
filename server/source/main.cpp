@@ -37,7 +37,7 @@ class StatsEndpoint {
 public:
   explicit StatsEndpoint(Address addr) : httpEndpoint(std::make_shared<Http::Endpoint>(addr)) {}
 
-  void init(size_t thr = 2) {
+  void init(std::size_t thr = 2) {
     auto opts = Http::Endpoint::options().threads(static_cast<int>(thr));
     httpEndpoint->init(opts);
     setupRoutes();
