@@ -48,7 +48,7 @@ Core::Core() {
 }
 Core::~Core() {}
 
-Status Core::getClientRegistrationData(std::string& registrationData) {
+Status Core::getRegistrationData(std::string& registrationData) {
   ClientRegistrationModel c(Utils::randomString(16));
   nlohmann::json j = c;
   registrationData = j.dump();
@@ -56,7 +56,7 @@ Status Core::getClientRegistrationData(std::string& registrationData) {
   return Status::kOk;
 }
 
-Status Core::initializeClientAnalyticsScheme(const std::string& schemeParamsData) {
+Status Core::initializeAnalyticsScheme(const std::string& schemeParamsData) {
   const auto j = nlohmann::json::parse(schemeParamsData);
   SchemeParamsModel s = j.get<SchemeParamsModel>();
   spdlog::info("received {}", s);
@@ -65,7 +65,7 @@ Status Core::initializeClientAnalyticsScheme(const std::string& schemeParamsData
   return Status::kOk;
 }
 
-Status Core::getClientPublicData(std::string& clientPublicData) {
+Status Core::getPublicData(std::string& publicData) {
   PublicKey pubKey;
   std::string pubKeyB64 = "";
   ClientPublicDataModel pubData;
@@ -78,9 +78,9 @@ Status Core::getClientPublicData(std::string& clientPublicData) {
   pubKey.toBase64(pubKeyB64);
   pubData = ClientPublicDataModel(mEncryptor->getClientId(), pubKeyB64);
   j = pubData;
-  clientPublicData = j.dump();
+  publicData = j.dump();
 
-  spdlog::info("client public data {}", clientPublicData);
+  spdlog::info("client public data {}", publicData);
 
   return Status::kOk;
 }
@@ -123,9 +123,12 @@ Status Core::provideParticipantsPublicData(const std::string& participantsPublic
   return Status::kOk;
 }
 
-Status Core::setLabelsValue(const std::string& label, std::uint64_t value) { return Status::kOk; }
+Status Core::setClearAnalyticsData(const std::string& label, std::uint64_t value) {
+  mAnalyticsData[label] = value;
+  return Status::kOk;
+}
 
-Status Core::getClientAnalyticsData(std::string& analyticsData) { return Status::kOk; }
+Status Core::getEncryptedAnalyticsData(std::string& analyticsData) { return Status::kOk; }
 
 Status prinsight::serializeClientPublicDataList(
     const std::vector<std::string>& clientPublicDataList,

@@ -24,9 +24,9 @@ auto main(int argc, char **argv) -> int {
 
   for (size_t i = 0; i < nClients; i++) {
     prinsight::Core core = prinsight::Core();
-    core.getClientRegistrationData(clientRegistrationData);
-    core.initializeClientAnalyticsScheme(schemeParams[i]);
-    core.getClientPublicData(clientPublicData);
+    core.getRegistrationData(clientRegistrationData);
+    core.initializeAnalyticsScheme(schemeParams[i]);
+    core.getPublicData(clientPublicData);
     clientPublicDataList.push_back(clientPublicData);
     clients.push_back(core);
   }

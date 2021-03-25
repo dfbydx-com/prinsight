@@ -4,6 +4,7 @@
 
 #include <prinsight/status.hpp>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace prinsight {
@@ -27,24 +28,26 @@ namespace prinsight {
    * @brief Prinsight core APIs
    */
   class Core {
+  private:
     DMCFEncryptor *mEncryptor;
+    std::unordered_map<std::string, std::uint64_t> mAnalyticsData;
 
   public:
     Core();
 
     ~Core();
 
-    Status getClientRegistrationData(std::string &registrationData);
+    Status getRegistrationData(std::string &registrationData);
 
-    Status initializeClientAnalyticsScheme(const std::string &schemeParamsData);
+    Status initializeAnalyticsScheme(const std::string &schemeParamsData);
 
-    Status getClientPublicData(std::string &clientPublicData);
+    Status getPublicData(std::string &publicData);
 
     Status provideParticipantsPublicData(const std::string &participantsPublicData);
 
-    Status setLabelsValue(const std::string &label, std::uint64_t value);
+    Status setClearAnalyticsData(const std::string &label, std::uint64_t value);
 
-    Status getClientAnalyticsData(std::string &analyticsData);
+    Status getEncryptedAnalyticsData(std::string &analyticsData);
   };
 
   Status serializeClientPublicDataList(const std::vector<std::string> &clientPublicDataList,
