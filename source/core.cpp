@@ -115,7 +115,7 @@ Status Core::provideParticipantsPublicData(const std::string& participantsPublic
 
     std::string pubKeyB64 = c.getPublicKey();
     p.fromBase64(pubKeyB64);
-    pubKeyList[i] = p;
+    pubKeyList.insert(pubKeyList.begin() + i, p);
   }
 
   mEncryptor->setParticipantsPublicKeys(pubKeyList);
@@ -130,9 +130,10 @@ Status Core::getClientAnalyticsData(std::string& analyticsData) { return Status:
 Status prinsight::serializeClientPublicDataList(
     const std::vector<std::string>& clientPublicDataList,
     std::string& serializedClientPublicDataList) {
-  nlohmann::json j;
+  nlohmann::json j = nlohmann::json::array();
   for (auto clientPublicData : clientPublicDataList) {
-    j.push_back(clientPublicData);
+    const auto k = nlohmann::json::parse(clientPublicData);
+    j.push_back(k);
   }
   serializedClientPublicDataList = j.dump();
   spdlog::info("json {}", serializedClientPublicDataList);

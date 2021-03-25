@@ -33,7 +33,6 @@ namespace prinsight {
     inline std::vector<std::string> getFeKey() const { return feKey; }
     inline void setFeKey(const std::vector<std::string>& feKey) { this->feKey = feKey; }
 
-    // friend deSerializeAnalyticsDataList();
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(AnalyticsData, index, encData, feKey)
   };
 }  // namespace prinsight

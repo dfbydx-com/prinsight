@@ -29,7 +29,7 @@ namespace prinsight {
 
     template <typename OStream>
     friend OStream &operator<<(OStream &os, const ClientPublicDataModel &c) {
-      return os << "client public data data [index:" << c.index << ", pub-key:" << c.pubKey << "]";
+      return os << "client public data [index:" << c.index << ", pub-key:" << c.pubKey << "]";
     }
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(ClientPublicDataModel, index, pubKey)

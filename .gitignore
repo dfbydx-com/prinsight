@@ -6,6 +6,7 @@ build
 build.log
 temp
 out
+*.bak
 
 CMakeLists.txt.user
 CMakeCache.txt
