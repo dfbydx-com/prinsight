@@ -101,9 +101,9 @@ namespace prinsight {
   void G2::toBase64(std::vector<std::string>& partsB64) {
     const std::size_t b64BufferLength = BASE64_ENCODE_OUT_SIZE(kG2BufferSize);
     char b64Buffer[b64BufferLength] = {0};
-    base64_encode((const unsigned char*)mPart1, sizeof(mPart1), mPart1);
+    base64_encode((const unsigned char*)mPart1, sizeof(mPart1), b64Buffer);
     partsB64.push_back(std::string(b64Buffer));
-    base64_encode((const unsigned char*)mPart2, sizeof(mPart2), mPart2);
+    base64_encode((const unsigned char*)mPart2, sizeof(mPart2), b64Buffer);
     partsB64.push_back(std::string(b64Buffer));
   }
 
