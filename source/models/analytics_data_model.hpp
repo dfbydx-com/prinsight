@@ -33,7 +33,7 @@ namespace prinsight {
       this->encData = encData;
     }
 
-    inline std::vector<std::string> fdKey() const { return fdKey; }
+    inline std::vector<std::string> getFdKey() const { return fdKey; }
     inline void setFeKey(const std::vector<std::string> &feKey) { this->fdKey = feKey; }
 
     template <typename OStream> friend OStream &operator<<(OStream &os, const AnalyticsData &a) {

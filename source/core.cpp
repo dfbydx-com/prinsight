@@ -12,6 +12,7 @@ extern "C" {
 #include "dmcfe/include/dmcfe_decryptor.hpp"
 #include "dmcfe/include/dmcfe_encryptor.hpp"
 #include "dmcfe/include/utils.hpp"
+#include "models/analytics_data_model.hpp"
 #include "models/client_public_data_model.hpp"
 #include "models/client_registration_model.hpp"
 #include "models/scheme_params_model.hpp"
@@ -22,30 +23,7 @@ extern "C" {
 
 using namespace prinsight;
 
-Core::Core() {
-  /*   PublicKey pk = mEncryptor->getPublicKey();
-    std::cout << pk << std::endl;
-
-    std::string str64, dec;
-    pk.toBase64(str64);
-    std::cout << std::endl << str64 << std::endl;
-
-    PublicKey pk2;
-    pk2.fromBase64(str64);
-    std::cout << pk2 << std::endl; */
-
-  /*   dec = Utils::b64decode(str64);
-    char cstr[dec.size() + 1];
-    dec.copy(cstr, dec.size() + 1);
-    cstr[dec.size()] = '\0';
-    // std::cout << cstr << std::endl;
-    for (std::size_t i = 0; i < dec.size(); i++) {
-      printf("%02hhx", cstr[i]);
-    } */
-
-  // FIXME   gen random client id
-  mEncryptor = nullptr;
-}
+Core::Core() { mEncryptor = nullptr; }
 Core::~Core() {}
 
 Status Core::getRegistrationData(std::string& registrationData) {
@@ -91,14 +69,15 @@ Status Core::provideParticipantsPublicData(const std::string& participantsPublic
   if (nullptr == mEncryptor) {
     return Status::kSchemeUninitialized;
   }
+
   spdlog::info("input: {}", participantsPublicData);
   const auto j = nlohmann::json::parse(participantsPublicData);
   std::vector<ClientPublicDataModel> clientPublicDataList
       = j.get<std::vector<ClientPublicDataModel>>();
 
   std::size_t currentParticipantsCount = clientPublicDataList.size();
-  std::size_t initialParticipantsCount = mEncryptor->getDataVectorLength();
-  if (currentParticipantsCount != initialParticipantsCount) {
+  std::size_t initializedParticipantsCount = mEncryptor->getDataVectorLength();
+  if (currentParticipantsCount != initializedParticipantsCount) {
     return Status::kBadParams;
   }
 
@@ -107,9 +86,10 @@ Status Core::provideParticipantsPublicData(const std::string& participantsPublic
   // we need to make sure pub-key list passed to cifer is correctly indexed
   for (auto c : clientPublicDataList) {
     PublicKey p;
-
+    // extract index
+    // FIXME what to do with already visited index
     std::size_t i = c.getIndex();
-    if (i >= initialParticipantsCount) {
+    if (i < 0 || i >= initializedParticipantsCount) {
       return Status::kBadParams;
     }
 
@@ -128,22 +108,112 @@ Status Core::setClearAnalyticsData(const std::string& label, std::uint64_t value
   return Status::kOk;
 }
 
-Status Core::getEncryptedAnalyticsData(std::string& analyticsData) { return Status::kOk; }
+Status Core::getEncryptedAnalyticsData(std::string& analyticsData) {
+  std::unordered_map<std::string, std::string> encData;
+  std::vector<std::string> fdKey;
 
-Status prinsight::serializeClientPublicDataList(
-    const std::vector<std::string>& clientPublicDataList,
-    std::string& serializedClientPublicDataList) {
-  nlohmann::json j = nlohmann::json::array();
-  for (auto clientPublicData : clientPublicDataList) {
-    const auto k = nlohmann::json::parse(clientPublicData);
-    j.push_back(k);
+  if (nullptr == mEncryptor) {
+    return Status::kSchemeUninitialized;
   }
-  serializedClientPublicDataList = j.dump();
-  spdlog::info("json {}", serializedClientPublicDataList);
+
+  // encrypt the data
+  for (auto d : mAnalyticsData) {
+    std::string cipherB64;
+    auto cipher = mEncryptor->encrypt(d.first, d.second);
+    // base64 conversion
+    cipher.toBase64(cipherB64);
+    // store label and encrypted data
+    encData[d.first] = cipherB64;
+  }
+
+  // get the functional decryption key
+  // FIXME, support for arbitrary policy/weights
+  const std::vector<std::int64_t> policy(mEncryptor->getDataVectorLength(), 1);
+  auto decKey = mEncryptor->getFunctionalDecryptionKey(policy);
+  // base64 conversion
+  decKey.toBase64(fdKey);
+
+  // json serialization
+  AnalyticsData a(mEncryptor->getClientId(), encData, fdKey);
+  nlohmann::json j = a;
+  analyticsData = j.dump();
+  spdlog::info("client analytics data {}", analyticsData);
+
   return Status::kOk;
 }
 
-Status getInnerProductAnalysis(const std::string& analyticsData) { return Status::kOk; }
+Status prinsight::serializeParticipantsPublicDataList(
+    const std::vector<std::string>& participantsPublicDataList,
+    std::string& serializedParticipantsPublicDataList) {
+  nlohmann::json j = nlohmann::json::array();
+  for (auto clientPublicData : participantsPublicDataList) {
+    const auto k = nlohmann::json::parse(clientPublicData);
+    j.push_back(k);
+  }
+  serializedParticipantsPublicDataList = j.dump();
+  spdlog::info("json {}", serializedParticipantsPublicDataList);
+  return Status::kOk;
+}
+
+Status prinsight::getInnerProductAnalysis(
+    const std::vector<std::string>& participantsAnalyticsDataList,
+    const std::vector<std::int64_t> policy, std::uint64_t bound,
+    std::vector<std::pair<std::string, std::uint64_t>>& result) {
+  std::unordered_map<std::string, std::vector<Cipher>> ciphersMap;
+  std::vector<FunctionalDecryptionKey> fdKeys;
+
+  spdlog::info("getInnerProductAnalysis");
+  std::size_t numParticiants = participantsAnalyticsDataList.size();
+  if (0 == numParticiants) {
+    return Status::kBadParams;
+  }
+
+  // parse json-message and extract the ciphers and functional decryption keys for each participants
+  for (auto d : participantsAnalyticsDataList) {
+    FunctionalDecryptionKey fdKey;
+    Cipher cipher;
+    const auto j = nlohmann::json::parse(d);
+    AnalyticsData clientData = j;
+    spdlog::info("clientData: {}", clientData);
+
+    // extract index
+    // FIXME what to do with already visited index
+    std::size_t i = clientData.getIndex();
+    if (i < 0 || i >= numParticiants) {
+      return Status::kBadParams;
+    }
+
+    // extract labels and encrypted data
+    auto encData = clientData.getEncData();
+    for (auto e : encData) {
+      if (ciphersMap.find(e.first) == ciphersMap.end()) {
+        ciphersMap[e.first] = std::vector<Cipher>(numParticiants);
+      }
+      auto clientCiphers = ciphersMap[e.first];
+      std::string cipherB64 = e.second;
+      cipher.fromBase64(cipherB64);
+      clientCiphers.insert(clientCiphers.begin() + i, cipher);
+    }
+
+    // extract functional decryption key
+    std::vector<std::string> fdKeyB64 = clientData.getFdKey();
+    if (2 != fdKeyB64.size()) {
+      return Status::kBadParams;
+    }
+    fdKey.fromBase64(fdKeyB64);
+    fdKeys.insert(fdKeys.begin() + i, fdKey);
+  }
+
+  // std::size_t numLabels = ciphersMap.size();
+  for (auto c : ciphersMap) {
+    auto label = c.first;
+    auto ciphers = c.second;
+    auto r = DMCFDecryptor::decrypt(ciphers, fdKeys, policy, label, bound);
+    result.emplace_back(std::make_pair(label, r));
+  }
+
+  return Status::kOk;
+}
 
 #if defined(ENABLE_PRINSIGHT_TESTING)
 
@@ -172,7 +242,7 @@ TEST_CASE("e2e encrypt-decrypt test on DMCFE APIs") {
   std::string label = "test label";
 
   for (std::size_t i = 0; i < nClients; i++) {
-    auto cipher = clients[i].encrypt(i * 100, label);
+    auto cipher = clients[i].encrypt(label, i * 100);
     ciphers.push_back(cipher);
     auto decKey = clients[i].getFunctionalDecryptionKey(policy);
     decKeys.push_back(decKey);

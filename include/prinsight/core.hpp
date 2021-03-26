@@ -5,6 +5,7 @@
 #include <prinsight/status.hpp>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace prinsight {
@@ -50,14 +51,13 @@ namespace prinsight {
     Status getEncryptedAnalyticsData(std::string &analyticsData);
   };
 
-  Status serializeClientPublicDataList(const std::vector<std::string> &clientPublicDataList,
-                                       std::string &serializedClientPublicDataList);
+  Status serializeParticipantsPublicDataList(
+      const std::vector<std::string> &participantsPublicDataList,
+      std::string &serializedParticipantsPublicDataList);
 
-  /* Status serializeClientAnalyticsDataDataList(
-        const std::vector<const std::string &> &clientAnalyticsDataDataList,
-        std::string &serializedClientAnalyticsDataDataList);
-
-     Status getInnerProductAnalysis(const std::string &analyticsData); */
+  Status getInnerProductAnalysis(const std::vector<std::string> &participantsAnalyticsDataList,
+                                 const std::vector<std::int64_t> policy, std::uint64_t bound,
+                                 std::vector<std::pair<std::string, std::uint64_t>> &result);
 
 }  // namespace prinsight
 
