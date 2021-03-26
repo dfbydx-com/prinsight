@@ -61,7 +61,7 @@ namespace prinsight {
     cfe_dmcfe_set_share(dmcfeClient, pub_keys, num_clients);
   }
 
-  Cipher DMCFEncryptor::encrypt(std::int64_t data, const std::string &label) {
+  Cipher DMCFEncryptor::encrypt(const std::string &label, std::int64_t data) {
     ECP_BN254 cipher;
     mpz_t x;
     mpz_init_set_ui(x, data);

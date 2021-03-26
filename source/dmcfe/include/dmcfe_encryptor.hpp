@@ -28,7 +28,7 @@ namespace prinsight {
 
     void setParticipantsPublicKeys(const std::vector<PublicKey> &publicKeyList);
 
-    Cipher encrypt(std::int64_t data, const std::string &label);
+    Cipher encrypt(const std::string &label, std::int64_t data);
 
     FunctionalDecryptionKey getFunctionalDecryptionKey(const std::vector<std::int64_t> &policy);
 
