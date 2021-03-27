@@ -187,12 +187,11 @@ Status prinsight::getInnerProductAnalysis(
     auto encData = clientData.getEncData();
     for (auto e : encData) {
       if (ciphersMap.find(e.first) == ciphersMap.end()) {
-        ciphersMap[e.first] = std::vector<Cipher>(numParticiants);
+        ciphersMap[e.first].reserve(numParticiants);
       }
-      auto clientCiphers = ciphersMap[e.first];
       std::string cipherB64 = e.second;
       cipher.fromBase64(cipherB64);
-      clientCiphers.insert(clientCiphers.begin() + i, cipher);
+      ciphersMap[e.first].insert(ciphersMap[e.first].begin() + i, cipher);
     }
 
     // extract functional decryption key
@@ -208,7 +207,19 @@ Status prinsight::getInnerProductAnalysis(
   for (auto c : ciphersMap) {
     auto label = c.first;
     auto ciphers = c.second;
+    /*
+        spdlog::info("decrypt for label {}", label);
+        for (auto fk : fdKeys) {
+          std::cout << "fdKeys " << fk << std::endl;
+        }
+        for (auto ci : ciphers) {
+          std::cout << "ciphers " << ci << std::endl;
+        } */
+
     auto r = DMCFDecryptor::decrypt(ciphers, fdKeys, policy, label, bound);
+
+    // spdlog::info("result {}", r);
+
     result.emplace_back(std::make_pair(label, r));
   }
 
