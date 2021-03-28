@@ -1,13 +1,11 @@
 #include <gmpxx.h>
+
+//#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_OFF
 #include <spdlog/spdlog.h>
 
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <prinsight/prinsight.hpp>
-extern "C" {
-#include "cifer/innerprod/fullysec/dmcfe.h"
-#include "cifer/sample/uniform.h"
-}
 
 #include "dmcfe/include/dmcfe_decryptor.hpp"
 #include "dmcfe/include/dmcfe_encryptor.hpp"
@@ -24,20 +22,24 @@ extern "C" {
 using namespace prinsight;
 
 Core::Core() { mEncryptor = nullptr; }
-Core::~Core() {}
+Core::~Core() {
+  if (nullptr != mEncryptor) {
+    // delete mEncryptor;
+  }
+}
 
 Status Core::getRegistrationData(std::string& registrationData) {
   ClientRegistrationModel c(Utils::randomString(16));
   nlohmann::json j = c;
   registrationData = j.dump();
-  spdlog::info("client registration data {}", registrationData);
+  SPDLOG_DEBUG("client registration data {}", registrationData);
   return Status::kOk;
 }
 
 Status Core::initializeAnalyticsScheme(const std::string& schemeParamsData) {
   const auto j = nlohmann::json::parse(schemeParamsData);
   SchemeParamsModel s = j.get<SchemeParamsModel>();
-  spdlog::info("received {}", s);
+  SPDLOG_DEBUG("received {}", s);
   mEncryptor = new DMCFEncryptor(s.getIndex(), s.getParticipantsCount(), s.getBound());
 
   return Status::kOk;
@@ -58,7 +60,7 @@ Status Core::getPublicData(std::string& publicData) {
   j = pubData;
   publicData = j.dump();
 
-  spdlog::info("client public data {}", publicData);
+  SPDLOG_DEBUG("client public data {}", publicData);
 
   return Status::kOk;
 }
@@ -70,7 +72,7 @@ Status Core::provideParticipantsPublicData(const std::string& participantsPublic
     return Status::kSchemeUninitialized;
   }
 
-  spdlog::info("input: {}", participantsPublicData);
+  SPDLOG_DEBUG("input: {}", participantsPublicData);
   const auto j = nlohmann::json::parse(participantsPublicData);
   std::vector<ClientPublicDataModel> clientPublicDataList
       = j.get<std::vector<ClientPublicDataModel>>();
@@ -137,7 +139,7 @@ Status Core::getEncryptedAnalyticsData(std::string& analyticsData) {
   AnalyticsData a(mEncryptor->getClientId(), encData, fdKey);
   nlohmann::json j = a;
   analyticsData = j.dump();
-  spdlog::info("client analytics data {}", analyticsData);
+  SPDLOG_DEBUG("client analytics data {}", analyticsData);
 
   return Status::kOk;
 }
@@ -151,7 +153,7 @@ Status prinsight::serializeParticipantsPublicDataList(
     j.push_back(k);
   }
   serializedParticipantsPublicDataList = j.dump();
-  spdlog::info("json {}", serializedParticipantsPublicDataList);
+  SPDLOG_DEBUG("json {}", serializedParticipantsPublicDataList);
   return Status::kOk;
 }
 
@@ -162,7 +164,7 @@ Status prinsight::getInnerProductAnalysis(
   std::unordered_map<std::string, std::vector<Cipher>> ciphersMap;
   std::vector<FunctionalDecryptionKey> fdKeys;
 
-  spdlog::info("getInnerProductAnalysis");
+  SPDLOG_DEBUG("getInnerProductAnalysis");
   std::size_t numParticiants = participantsAnalyticsDataList.size();
   if (0 == numParticiants) {
     return Status::kBadParams;
@@ -174,7 +176,7 @@ Status prinsight::getInnerProductAnalysis(
     Cipher cipher;
     const auto j = nlohmann::json::parse(d);
     AnalyticsData clientData = j;
-    spdlog::info("clientData: {}", clientData);
+    SPDLOG_DEBUG("clientData: {}", clientData);
 
     // extract index
     // FIXME what to do with already visited index
@@ -207,19 +209,7 @@ Status prinsight::getInnerProductAnalysis(
   for (auto c : ciphersMap) {
     auto label = c.first;
     auto ciphers = c.second;
-    /*
-        spdlog::info("decrypt for label {}", label);
-        for (auto fk : fdKeys) {
-          std::cout << "fdKeys " << fk << std::endl;
-        }
-        for (auto ci : ciphers) {
-          std::cout << "ciphers " << ci << std::endl;
-        } */
-
     auto r = DMCFDecryptor::decrypt(ciphers, fdKeys, policy, label, bound);
-
-    // spdlog::info("result {}", r);
-
     result.emplace_back(std::make_pair(label, r));
   }
 
@@ -238,7 +228,7 @@ TEST_CASE("e2e encrypt-decrypt test on DMCFE APIs") {
   std::vector<FunctionalDecryptionKey> decKeys;
   const std::vector<std::int64_t> policy(nClients, 1);
 
-  spdlog::info("create clients");
+  SPDLOG_DEBUG("create clients");
 
   for (std::size_t i = 0; i < nClients; i++) {
     auto client = DMCFEncryptor(i, nClients, bound);
@@ -259,91 +249,9 @@ TEST_CASE("e2e encrypt-decrypt test on DMCFE APIs") {
     decKeys.push_back(decKey);
   }
 
-  spdlog::info("decrypt starts");
+  SPDLOG_DEBUG("decrypt starts");
   auto result = DMCFDecryptor::decrypt(ciphers, decKeys, policy, label, bound);
-  spdlog::info("decrypt ends, result = {}", result);
+  SPDLOG_DEBUG("decrypt ends, result = {}", result);
 }
 
-TEST_CASE("e2e encrypt-decrypt test on cifer APIs") {
-  const std::size_t num_clients = 5;
-  mpz_t bound, bound_neg, xy_check, xy;
-  mpz_inits(bound, bound_neg, xy_check, xy, nullptr);
-  mpz_set_ui(bound, 10000);
-  // mpz_pow_ui(bound, bound, 10);
-  mpz_neg(bound_neg, bound);
-
-  // create clients and make an array of their public keys
-  cfe_dmcfe_client clients[num_clients];
-  ECP_BN254 pub_keys[num_clients];
-  for (std::size_t i = 0; i < num_clients; i++) {
-    cfe_dmcfe_client_init(&(clients[i]), i);
-    pub_keys[i] = clients[i].client_pub_key;
-  }
-
-  // based on public values of each client create private matrices T_i summing
-  // to 0
-  for (std::size_t i = 0; i < num_clients; i++) {
-    cfe_dmcfe_set_share(&(clients[i]), pub_keys, num_clients);
-  }
-
-  // now that the clients have agreed on secret keys they can encrypt a vector
-  // in a decentralized way and create partial keys such that only with all of
-  // them the decryption of the inner product is possible
-  cfe_vec x, y;
-  cfe_vec_inits(num_clients, &x, &y, nullptr);
-  // cfe_uniform_sample_vec(&x, bound);
-  // cfe_uniform_sample_range_vec(&y, bound_neg, bound);
-  mpz_t temp, one;
-  mpz_inits(temp, one, nullptr);
-  mpz_set_ui(one, 1);
-  for (std::size_t i = 0; i < num_clients; i++) {
-    mpz_set_ui(temp, i * 10);
-    cfe_vec_set(&x, temp, i);
-    cfe_vec_set(&y, one, i);
-  }
-  char label[] = "some label";
-  std::size_t label_len = 10;  // length of the label string
-  ECP_BN254 ciphers[num_clients];
-  cfe_vec_G2 fe_key[num_clients];
-
-  for (std::size_t i = 0; i < num_clients; i++) {
-    cfe_dmcfe_encrypt(&(ciphers[i]), &(clients[i]), x.vec[i], label, label_len);
-    cfe_dmcfe_fe_key_part_init(&(fe_key[i]));
-    cfe_dmcfe_derive_fe_key_part(&(fe_key[i]), &(clients[i]), &y);
-  }
-
-  // decrypt the inner product with the corresponding label
-  printf("\ndecrypt starts");
-  cfe_error err = cfe_dmcfe_decrypt(xy, ciphers, fe_key, label, label_len, &y, bound);
-  printf("\ndecrypt ends %x", err);
-
-  // check correctness
-  cfe_vec_dot(xy_check, &x, &y);
-
-  printf("\nvector x = [");
-  for (std::size_t i = 0; i < num_clients; i++) {
-    gmp_printf("%Zd ", x.vec[i]);
-  }
-  printf("]\n");
-
-  printf("\nvector y = [");
-  for (std::size_t i = 0; i < num_clients; i++) {
-    gmp_printf("%Zd  ", y.vec[i]);
-  }
-  printf("]\n");
-
-  gmp_printf(
-      "\nThe inner product of a random encrypted vector x and y = [1, "
-      "1,...,1] is %Zd\n",
-      xy);
-  // free the memory
-  mpz_clears(bound, bound_neg, xy_check, xy, nullptr);
-  for (std::size_t i = 0; i < num_clients; i++) {
-    cfe_dmcfe_client_free(&(clients[i]));
-    cfe_vec_G2_free(&(fe_key[i]));
-  }
-  cfe_vec_frees(&x, &y, nullptr);
-
-  return;
-}
 #endif

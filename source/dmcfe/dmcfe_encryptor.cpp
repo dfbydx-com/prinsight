@@ -31,7 +31,6 @@ namespace prinsight {
 
     // extract public key
     mPublicKey = PublicKey(dmcfeClient->client_pub_key);
-    std::cout << "pub-key " << mPublicKey << std::endl;
     mDmcfeClient = (void *)dmcfeClient;
   }
 
@@ -53,8 +52,6 @@ namespace prinsight {
     ECP_BN254 *pub_keys = (ECP_BN254 *)cfe_malloc(num_clients * sizeof(ECP_BN254));
 
     for (std::size_t i = 0; i < num_clients; i++) {
-      std::cout << "pub-key " << publicKeyList[i] << std::endl;
-
       publicKeyList[i].toCiferType(pub_keys[i]);
     }
 
@@ -99,6 +96,10 @@ namespace prinsight {
     return FunctionalDecryptionKey(decryptionKey);
   }
 
-  DMCFEncryptor::~DMCFEncryptor() {}
-  // namespace dmcfe
+  DMCFEncryptor::~DMCFEncryptor() {
+    cfe_dmcfe_client *dmcfeClient = (cfe_dmcfe_client *)(mDmcfeClient);
+    if (nullptr == dmcfeClient) {  // FIXME
+      free(dmcfeClient);
+    }
+  }
 }  // namespace prinsight

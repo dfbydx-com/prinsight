@@ -24,7 +24,7 @@ auto main(int argc, char **argv) -> int {
   std::string schmeParamsData2 = R"({ "index": 1, "participantsCount": 2, "bound": 1000 })";
   std::vector<std::string> schemeParams = {schmeParamsData1, schmeParamsData2};
 
-  spdlog::info("Client started, fetching keys");
+  SPDLOG_DEBUG("Client started, fetching keys");
 
   for (std::size_t i = 0; i < numClients; i++) {
     prinsight::Core core = prinsight::Core();
@@ -47,12 +47,12 @@ auto main(int argc, char **argv) -> int {
     participantsAnalyticsDataList.push_back(analyticsData);
   }
 
-  spdlog::info("analysis starts...");
+  SPDLOG_DEBUG("analysis starts...");
   prinsight::getInnerProductAnalysis(participantsAnalyticsDataList, policy, bound, result);
-  spdlog::info("analysis ends");
+  SPDLOG_DEBUG("analysis ends");
 
   for (auto r : result) {
-    spdlog::info("{} : {}", r.first, r.second);
+    SPDLOG_DEBUG("{} : {}", r.first, r.second);
   }
 
   return 0;

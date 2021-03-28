@@ -39,15 +39,6 @@ namespace prinsight {
     base64_decode(&(b64String[0]), b64String.length(), (unsigned char*)mBuffer);  // FIXME
   }
 
-  /*   template <typename OStream> OStream& operator<<(OStream& os, const G1& p) {
-      os << "[ 0x";
-      for (auto c : p.mBuffer) {
-        os << std::setw(2) << std::setfill('0') << std::hex << (int)c;
-      }
-      os << " ]";
-      return os;
-    } */
-
   std::ostream& operator<<(std::ostream& os, const G1& p) {
     os << "[ 0x";
     for (auto c : p.mBuffer) {
