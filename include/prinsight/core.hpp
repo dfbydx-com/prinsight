@@ -10,19 +10,6 @@
 
 namespace prinsight {
 
-  /*
-   * get clentIndex, nCient and bound from server::register(clientId)
-   * init - index nclient bound
-   * getPublicKey
-   * post publickey to server::register
-   * get participantsPublicKeys from server
-   * setParticipantsPublicKeys
-   *
-   * set labels/count
-   * get encrypteddata+fekey
-   * post analyticsdata
-   */
-
   class DMCFEncryptor;
 
   /**
