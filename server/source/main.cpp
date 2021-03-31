@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-//#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_OFF
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #include <spdlog/spdlog.h>
 
 #include <nlohmann/json.hpp>
@@ -44,7 +44,10 @@ public:
   }
 
   void init(std::size_t thr = 2) {
-    auto opts = Http::Endpoint::options().threads(static_cast<int>(thr));
+    auto flags = Tcp::Options::ReuseAddr;
+
+    auto opts = Http::Endpoint::options().threads(static_cast<int>(thr)).flags(flags);
+    ;
     httpEndpoint->init(opts);
     setupRoutes();
   }
@@ -57,15 +60,15 @@ public:
 private:
   void setupRoutes() {
     using namespace Rest;
-    Routes::Get(router, "/register", Routes::bind(&AnalyticsService::doRegisterParticipant, this));
-    Routes::Get(router, "/analytics/scheme",
+    Routes::Post(router, "/register", Routes::bind(&AnalyticsService::doRegisterParticipant, this));
+    Routes::Get(router, "/analytics/scheme/:regId",
                 Routes::bind(&AnalyticsService::doGetAnalyticsSchemeParams, this));
-    Routes::Get(router, "/analytics/pubdata",
-                Routes::bind(&AnalyticsService::doRecordParticipantsPublicData, this));
-    Routes::Get(router, "/analytics/pubdata",
+    Routes::Post(router, "/analytics/pubdata/",
+                 Routes::bind(&AnalyticsService::doRecordParticipantsPublicData, this));
+    Routes::Get(router, "/analytics/allpubdata",
                 Routes::bind(&AnalyticsService::doGetParticipantsPublicData, this));
-    Routes::Get(router, "/analytics/analyticsdata",
-                Routes::bind(&AnalyticsService::doGetAnalyticsSchemeParams, this));
+    Routes::Post(router, "/analytics/analyticsdata",
+                 Routes::bind(&AnalyticsService::doRecordAnalyticsData, this));
     Routes::Get(router, "/analysis", Routes::bind(&AnalyticsService::doGetAnalysis, this));
   }
 
@@ -78,6 +81,7 @@ private:
     }
 
     try {
+      SPDLOG_TRACE("request body {}", request.body());
       auto j = nlohmann::json::parse(request.body());
       std::string clientId = j["clientId"];
       auto it = std::find_if(
@@ -85,7 +89,8 @@ private:
           [&](const Participant& participant) { return participant.clientId() == clientId; });
 
       if (it == std::end(participants)) {
-        int index = AnalyticsService::participantsIndex++;
+        int index = AnalyticsService::participantsIndex;
+        AnalyticsService::participantsIndex++;
         participants.push_back(Participant(std::move(clientId), index));
         response.send(Http::Code::Created, std::to_string(index));
       } else {
@@ -104,7 +109,7 @@ private:
   }
 
   void doGetAnalyticsSchemeParams(const Rest::Request& request, Http::ResponseWriter response) {
-    auto registrationId = request.param(":registrationId").as<std::size_t>();
+    auto registrationId = request.param(":regId").as<std::size_t>();
 
     Guard guard(participantsLock);
     auto it = std::find_if(
@@ -125,26 +130,31 @@ private:
   }
 
   void doRecordParticipantsPublicData(const Rest::Request& request, Http::ResponseWriter response) {
-    std::string pubData = "";
-    auto registrationId = request.param(":registrationId").as<std::size_t>();
-
-    if (request.hasParam(":pubData")) {
-      pubData = request.param(":pubData").as<std::string>();
-    } else {
-      response.send(Http::Code::Bad_Request, "parameter is missing");
-    }
-
     Guard guard(participantsLock);
-    auto it = std::find_if(
-        participants.begin(), participants.end(),
-        [&](const Participant& participant) { return participant.index() == registrationId; });
 
-    if (it == std::end(participants)) {
-      response.send(Http::Code::Not_Found, "client is not registered");
-    } else {
-      auto& participant = *it;
-      participant.setPublicData(pubData);
-      response.send(Http::Code::Ok);
+    try {
+      SPDLOG_TRACE("request body {}", request.body());
+      auto j = nlohmann::json::parse(request.body());
+      std::size_t index = j["index"];
+      auto it = std::find_if(
+          participants.begin(), participants.end(),
+          [&](const Participant& participant) { return participant.index() == index; });
+
+      if (it == std::end(participants)) {
+        response.send(Http::Code::Not_Found, "client is not registered");
+      } else {
+        auto& participant = *it;
+        participant.setPublicData(request.body());
+        response.send(Http::Code::Ok);
+      }
+    } catch (nlohmann::detail::exception& e) {
+      // send a 400 error
+      response.send(Pistache::Http::Code::Bad_Request, e.what());
+      return;
+    } catch (std::exception& e) {
+      // send a 500 error
+      response.send(Pistache::Http::Code::Internal_Server_Error, e.what());
+      return;
     }
   }
 
@@ -152,7 +162,6 @@ private:
     prinsight::Status status;
     std::vector<std::string> participantsPublicDataList;
     std::string serializedParticipantsPublicData = "";
-    auto registrationId = request.param(":registrationId").as<std::size_t>();
 
     Guard guard(participantsLock);
 
@@ -175,27 +184,32 @@ private:
   }
 
   void doRecordAnalyticsData(const Rest::Request& request, Http::ResponseWriter response) {
-    std::string analyticsData = "";
-    auto registrationId = request.param(":registrationId").as<std::size_t>();
-
-    if (request.hasParam(":analyticsData")) {
-      analyticsData = request.param(":analyticsData").as<std::string>();
-    } else {
-      response.send(Http::Code::Bad_Request, "parameter is missing");
-    }
-
     Guard guard(participantsLock);
-    auto it = std::find_if(
-        participants.begin(), participants.end(),
-        [&](const Participant& participant) { return participant.index() == registrationId; });
+    try {
+      SPDLOG_TRACE("request body {}", request.body());
+      auto j = nlohmann::json::parse(request.body());
+      std::size_t index = j["index"];
+      auto it = std::find_if(
+          participants.begin(), participants.end(),
+          [&](const Participant& participant) { return participant.index() == index; });
 
-    if (it == std::end(participants)) {
-      response.send(Http::Code::Not_Found, "client is not registered");
-    } else {
-      auto& participant = *it;
-      participant.setAnalyticsData(analyticsData);
-      mParticipantsAnalyticsDataList.push_back(analyticsData);
-      response.send(Http::Code::Ok);
+      if (it == std::end(participants)) {
+        response.send(Http::Code::Not_Found, "client is not registered");
+      } else {
+        auto& participant = *it;
+        participant.setAnalyticsData(request.body());
+        mParticipantsAnalyticsDataList.push_back(request.body());
+
+        response.send(Http::Code::Ok);
+      }
+    } catch (nlohmann::detail::exception& e) {
+      // send a 400 error
+      response.send(Pistache::Http::Code::Bad_Request, e.what());
+      return;
+    } catch (std::exception& e) {
+      // send a 500 error
+      response.send(Pistache::Http::Code::Internal_Server_Error, e.what());
+      return;
     }
   }
 
@@ -209,6 +223,7 @@ private:
     // return only if we have enough participants
     if ((batchSize != participantsIndex) || (batchSize != mParticipantsAnalyticsDataList.size())) {
       response.send(Http::Code::Internal_Server_Error, "not enough participants, retry");
+      return;
     }
 
     SPDLOG_DEBUG("analysis starts...");
@@ -254,6 +269,7 @@ int main(int argc, char* argv[]) {
 
   Address addr(Ipv4::any(), port);
 
+  spdlog::set_level(spdlog::level::trace);
   SPDLOG_DEBUG("Cores {}", hardware_concurrency());
   SPDLOG_DEBUG("Using {} threads", thr);
 
