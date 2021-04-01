@@ -2,6 +2,7 @@
 #define DMCF_ENCRYPTOR
 
 #include <cstdint>
+#include <prinsight/status.hpp>
 #include <string>
 #include <vector>
 
@@ -20,17 +21,18 @@ namespace prinsight {
   public:
     DMCFEncryptor(std::size_t clientId, std::size_t dataVectorLength, std::uint64_t bound);
 
-    PublicKey getPublicKey() const;
+    PublicKey publicKey() const;
 
-    std::size_t getClientId() const;
+    std::size_t clientId() const;
 
-    std::size_t getDataVectorLength() const;
+    std::size_t dataVectorLength() const;
 
-    void setParticipantsPublicKeys(const std::vector<PublicKey> &publicKeyList);
+    Status setParticipantsPublicKeys(const std::vector<PublicKey> &publicKeyList);
 
-    Cipher encrypt(const std::string &label, std::int64_t data);
+    Status encrypt(const std::string &label, std::int64_t data, Cipher &cipher);
 
-    FunctionalDecryptionKey getFunctionalDecryptionKey(const std::vector<std::int64_t> &policy);
+    Status getFunctionalDecryptionKey(const std::vector<std::int64_t> &policy,
+                                      FunctionalDecryptionKey &functionalDecryptionKey);
 
     ~DMCFEncryptor();
   };

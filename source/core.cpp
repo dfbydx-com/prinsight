@@ -54,9 +54,9 @@ Status Core::getPublicData(std::string& publicData) {
   if (nullptr == mEncryptor) {
     return Status::kSchemeUninitialized;
   }
-  pubKey = mEncryptor->getPublicKey();
+  pubKey = mEncryptor->publicKey();
   pubKey.toBase64(pubKeyB64);
-  pubData = ClientPublicDataModel(mEncryptor->getClientId(), pubKeyB64);
+  pubData = ClientPublicDataModel(mEncryptor->clientId(), pubKeyB64);
   j = pubData;
   publicData = j.dump();
 
@@ -78,7 +78,7 @@ Status Core::provideParticipantsPublicData(const std::string& participantsPublic
       = j.get<std::vector<ClientPublicDataModel>>();
 
   std::size_t currentParticipantsCount = clientPublicDataList.size();
-  std::size_t initializedParticipantsCount = mEncryptor->getDataVectorLength();
+  std::size_t initializedParticipantsCount = mEncryptor->dataVectorLength();
   if (currentParticipantsCount != initializedParticipantsCount) {
     return Status::kBadParams;
   }
@@ -95,14 +95,12 @@ Status Core::provideParticipantsPublicData(const std::string& participantsPublic
       return Status::kBadParams;
     }
 
-    std::string pubKeyB64 = c.getPublicKey();
+    std::string pubKeyB64 = c.publicKey();
     p.fromBase64(pubKeyB64);
     pubKeyList.insert(pubKeyList.begin() + i, p);
   }
 
-  mEncryptor->setParticipantsPublicKeys(pubKeyList);
-
-  return Status::kOk;
+  return mEncryptor->setParticipantsPublicKeys(pubKeyList);
 }
 
 Status Core::setClearAnalyticsData(const std::string& label, std::uint64_t value) {
@@ -112,7 +110,10 @@ Status Core::setClearAnalyticsData(const std::string& label, std::uint64_t value
 
 Status Core::getEncryptedAnalyticsData(std::string& analyticsData) {
   std::unordered_map<std::string, std::string> encData;
-  std::vector<std::string> fdKey;
+  Cipher cipher;
+  FunctionalDecryptionKey fdKey;
+  std::vector<std::string> fdKeyStr;
+  Status status = Status::kUnknownError;
 
   if (nullptr == mEncryptor) {
     return Status::kSchemeUninitialized;
@@ -121,7 +122,10 @@ Status Core::getEncryptedAnalyticsData(std::string& analyticsData) {
   // encrypt the data
   for (auto d : mAnalyticsData) {
     std::string cipherB64;
-    auto cipher = mEncryptor->encrypt(d.first, d.second);
+    status = mEncryptor->encrypt(d.first, d.second, cipher);
+    if (Status::kOk != status) {
+      return status;
+    }
     // base64 conversion
     cipher.toBase64(cipherB64);
     // store label and encrypted data
@@ -130,13 +134,16 @@ Status Core::getEncryptedAnalyticsData(std::string& analyticsData) {
 
   // get the functional decryption key
   // FIXME, support for arbitrary policy/weights
-  const std::vector<std::int64_t> policy(mEncryptor->getDataVectorLength(), 1);
-  auto decKey = mEncryptor->getFunctionalDecryptionKey(policy);
+  const std::vector<std::int64_t> policy(mEncryptor->dataVectorLength(), 1);
+  status = mEncryptor->getFunctionalDecryptionKey(policy, fdKey);
+  if (Status::kOk != status) {
+    return status;
+  }
   // base64 conversion
-  decKey.toBase64(fdKey);
+  fdKey.toBase64(fdKeyStr);
 
   // json serialization
-  AnalyticsData a(mEncryptor->getClientId(), encData, fdKey);
+  AnalyticsData a(mEncryptor->clientId(), encData, fdKeyStr);
   nlohmann::json j = a;
   analyticsData = j.dump();
   SPDLOG_DEBUG("client analytics data {}", analyticsData);
@@ -161,6 +168,7 @@ Status prinsight::getInnerProductAnalysis(
     const std::vector<std::string>& participantsAnalyticsDataList,
     const std::vector<std::int64_t> policy, std::uint64_t bound,
     std::vector<std::pair<std::string, std::uint64_t>>& result) {
+  Status status = Status::kUnknownError;
   std::unordered_map<std::string, std::vector<Cipher>> ciphersMap;
   std::vector<FunctionalDecryptionKey> fdKeys;
 
@@ -209,7 +217,11 @@ Status prinsight::getInnerProductAnalysis(
   for (auto c : ciphersMap) {
     auto label = c.first;
     auto ciphers = c.second;
-    auto r = DMCFDecryptor::decrypt(ciphers, fdKeys, policy, label, bound);
+    std::uint64_t r;
+    status = DMCFDecryptor::decrypt(ciphers, fdKeys, policy, label, bound, r);
+    if (Status::kOk != status) {
+      return status;
+    }
     result.emplace_back(std::make_pair(label, r));
   }
 
@@ -233,7 +245,7 @@ TEST_CASE("e2e encrypt-decrypt test on DMCFE APIs") {
   for (std::size_t i = 0; i < nClients; i++) {
     auto client = DMCFEncryptor(i, nClients, bound);
     clients.push_back(client);
-    pubKeys.push_back(client.getPublicKey());
+    pubKeys.push_back(client.publicKey());
   }
 
   for (std::size_t i = 0; i < nClients; i++) {

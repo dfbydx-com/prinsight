@@ -34,66 +34,72 @@ namespace prinsight {
     mDmcfeClient = (void *)dmcfeClient;
   }
 
-  std::size_t DMCFEncryptor::getClientId() const { return mClientId; }
+  std::size_t DMCFEncryptor::clientId() const { return mClientId; }
 
-  PublicKey DMCFEncryptor::getPublicKey() const { return mPublicKey; }
+  PublicKey DMCFEncryptor::publicKey() const { return mPublicKey; }
 
-  std::size_t DMCFEncryptor::getDataVectorLength() const { return mDataVectorLength; }
+  std::size_t DMCFEncryptor::dataVectorLength() const { return mDataVectorLength; }
 
   // CiFEr expects index of every participants including this encryptor should be provided in
   // cfe_dmcfe_set_share call. Although it ignores the public key of this client.
-  void DMCFEncryptor::setParticipantsPublicKeys(const std::vector<PublicKey> &publicKeyList) {
+  Status DMCFEncryptor::setParticipantsPublicKeys(const std::vector<PublicKey> &publicKeyList) {
     cfe_dmcfe_client *dmcfeClient = (cfe_dmcfe_client *)(mDmcfeClient);
     if (nullptr == dmcfeClient) {
-      return;
+      return Status::kBadState;
     }
 
     std::size_t num_clients = publicKeyList.size();
     ECP_BN254 *pub_keys = (ECP_BN254 *)cfe_malloc(num_clients * sizeof(ECP_BN254));
+    if (nullptr == pub_keys) {
+      return Status::kOutOfMemory;
+    }
 
     for (std::size_t i = 0; i < num_clients; i++) {
       publicKeyList[i].toCiferType(pub_keys[i]);
     }
 
     cfe_dmcfe_set_share(dmcfeClient, pub_keys, num_clients);
+    return Status::kOk;
   }
 
-  Cipher DMCFEncryptor::encrypt(const std::string &label, std::int64_t data) {
-    ECP_BN254 cipher;
+  Status DMCFEncryptor::encrypt(const std::string &label, std::int64_t data, Cipher &cipher) {
+    ECP_BN254 enc;
     mpz_t x;
     mpz_init_set_ui(x, data);
 
     cfe_dmcfe_client *dmcfeClient = (cfe_dmcfe_client *)(mDmcfeClient);
-    /*       if (nullptr == dmcfeClient) {
-            return nullptr;
-          } */
+    if (nullptr == dmcfeClient) {
+      return Status::kBadState;
+    }
 
     // CiFEr expects label param as char* not const char*
     // cfe_dmcfe_encrypt(&cipher, dmcfeClient, x, label.c_str(), label.length());
     // https://stackoverflow.com/questions/347949/how-to-convert-a-stdstring-to-const-char-or-char
     std::vector<char> writable(label.begin(), label.end());
     writable.push_back('\0');
-    cfe_dmcfe_encrypt(&cipher, dmcfeClient, x, &writable[0], writable.size());
-    return Cipher(cipher);
+    cfe_dmcfe_encrypt(&enc, dmcfeClient, x, &writable[0], writable.size());
+    cipher = Cipher(enc);
+    return Status::kOk;
   }
 
-  FunctionalDecryptionKey DMCFEncryptor::getFunctionalDecryptionKey(
-      const std::vector<std::int64_t> &policy) {
+  Status DMCFEncryptor::getFunctionalDecryptionKey(
+      const std::vector<std::int64_t> &policy, FunctionalDecryptionKey &functionalDecryptionKey) {
     cfe_vec tempPolicy;
     cfe_vec_G2 decryptionKey;
 
     cfe_vec_init(&tempPolicy, policy.size());
 
     cfe_dmcfe_client *dmcfeClient = (cfe_dmcfe_client *)(mDmcfeClient);
-    // if (nullptr == dmcfeClient) {  // FIXME
-    //   return error;
-    // }
+    if (nullptr == dmcfeClient) {
+      return Status::kBadState;
+    }
 
     Utils::Int64tVecToCfeVec(policy, &tempPolicy);
 
     cfe_dmcfe_fe_key_part_init(&decryptionKey);
     cfe_dmcfe_derive_fe_key_part(&decryptionKey, dmcfeClient, &tempPolicy);
-    return FunctionalDecryptionKey(decryptionKey);
+    functionalDecryptionKey = FunctionalDecryptionKey(decryptionKey);
+    return Status::kOk;
   }
 
   DMCFEncryptor::~DMCFEncryptor() {

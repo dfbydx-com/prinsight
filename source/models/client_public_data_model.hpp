@@ -24,7 +24,7 @@ namespace prinsight {
     inline std::size_t getIndex() const { return index; }
     inline void setIndex(std::size_t index) { this->index = index; }
 
-    inline std::string getPublicKey() const { return pubKey; }
+    inline std::string publicKey() const { return pubKey; }
     inline void setPublicKey(const std::string &pubKey) { this->pubKey = pubKey; }
 
     template <typename OStream>

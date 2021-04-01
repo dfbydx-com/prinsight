@@ -15,10 +15,10 @@ extern "C" {
 
 namespace prinsight {
 
-  std::uint64_t DMCFDecryptor::decrypt(const std::vector<Cipher> &cipherList,
-                                       const std::vector<FunctionalDecryptionKey> decryptionKeyList,
-                                       const std::vector<std::int64_t> &policy,
-                                       const std::string &label, std::uint64_t bound) {
+  Status DMCFDecryptor::decrypt(const std::vector<Cipher> &cipherList,
+                                const std::vector<FunctionalDecryptionKey> decryptionKeyList,
+                                const std::vector<std::int64_t> &policy, const std::string &label,
+                                std::uint64_t bound, std::uint64_t &result) {
     // check if length of ciphers, keys and policies are same
     // decrypt the inner product with the corresponding label
     const std::size_t num_clients = decryptionKeyList.size();
@@ -46,10 +46,13 @@ namespace prinsight {
 
     cfe_error err
         = cfe_dmcfe_decrypt(res, ciphers, key_shares, &writable[0], writable.size(), &y, resBound);
+    if (err) {
+      return Status::kCryptoOperationError;
+    }
 
-    std::uint64_t result = mpz_get_ui(res);
+    result = mpz_get_ui(res);
     mpz_clears(res, resBound, nullptr);
 
-    return result;
+    return Status::kOk;
   }
 }  // namespace prinsight
