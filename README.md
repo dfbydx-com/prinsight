@@ -76,7 +76,7 @@ There is sample client and server application where 2 clients send their encrypt
       ```
     If everything is fine, then above *curl* command returns following string,
     ```
-    [["label1",2],["label2",10]]d
+    [["label1",2],["label2",10]]
     ```
 ## Tests
 
@@ -124,7 +124,7 @@ As of now, this project is in very early stage and serves mainly proof-of-concep
 
 ## License
 
-Distributed under the Apache License. See `LICENSE` for more information.
+Distributed under the Apache License. See [`LICENSE`](LICENSE) for more information.
 
 ## Acknowledgements
 
